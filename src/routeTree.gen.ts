@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as NovaDividaRouteImport } from './routes/nova-divida'
 import { Route as MinhasDividasRouteImport } from './routes/minhas-dividas'
+import { Route as CarteiraRouteImport } from './routes/carteira'
 import { Route as IndexRouteImport } from './routes/index'
 
 const NovaDividaRoute = NovaDividaRouteImport.update({
@@ -23,6 +24,11 @@ const MinhasDividasRoute = MinhasDividasRouteImport.update({
   path: '/minhas-dividas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CarteiraRoute = CarteiraRouteImport.update({
+  id: '/carteira',
+  path: '/carteira',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -31,30 +37,34 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/carteira': typeof CarteiraRoute
   '/minhas-dividas': typeof MinhasDividasRoute
   '/nova-divida': typeof NovaDividaRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/carteira': typeof CarteiraRoute
   '/minhas-dividas': typeof MinhasDividasRoute
   '/nova-divida': typeof NovaDividaRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/carteira': typeof CarteiraRoute
   '/minhas-dividas': typeof MinhasDividasRoute
   '/nova-divida': typeof NovaDividaRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/minhas-dividas' | '/nova-divida'
+  fullPaths: '/' | '/carteira' | '/minhas-dividas' | '/nova-divida'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/minhas-dividas' | '/nova-divida'
-  id: '__root__' | '/' | '/minhas-dividas' | '/nova-divida'
+  to: '/' | '/carteira' | '/minhas-dividas' | '/nova-divida'
+  id: '__root__' | '/' | '/carteira' | '/minhas-dividas' | '/nova-divida'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CarteiraRoute: typeof CarteiraRoute
   MinhasDividasRoute: typeof MinhasDividasRoute
   NovaDividaRoute: typeof NovaDividaRoute
 }
@@ -75,6 +85,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MinhasDividasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/carteira': {
+      id: '/carteira'
+      path: '/carteira'
+      fullPath: '/carteira'
+      preLoaderRoute: typeof CarteiraRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -87,6 +104,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CarteiraRoute: CarteiraRoute,
   MinhasDividasRoute: MinhasDividasRoute,
   NovaDividaRoute: NovaDividaRoute,
 }

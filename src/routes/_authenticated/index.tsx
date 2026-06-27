@@ -48,6 +48,25 @@ function Dashboard() {
     investimentos,
   } = useFinance();
 
+  const { data: greetingName } = useQuery({
+    queryKey: ["profile", "greeting"],
+    queryFn: async () => {
+      const { data: userRes } = await supabase.auth.getUser();
+      const user = userRes.user;
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .maybeSingle();
+      const full = (profile?.full_name ?? "").trim();
+      if (full) return full.split(" ")[0];
+      const meta: any = user?.user_metadata ?? {};
+      const metaName = (meta.full_name ?? meta.name ?? "").trim();
+      if (metaName) return metaName.split(" ")[0];
+      if (user?.email) return user.email.split("@")[0];
+      return "";
+    },
+  });
+
   // ===== Mês atual =====
   const now = new Date();
   const monthTx = useMemo(

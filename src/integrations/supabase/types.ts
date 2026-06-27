@@ -14,7 +14,161 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      accounts: {
+        Row: {
+          balance: number
+          color: string
+          created_at: string
+          emoji: string
+          id: string
+          name: string
+          type: Database["public"]["Enums"]["account_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          color?: string
+          created_at?: string
+          emoji?: string
+          id?: string
+          name: string
+          type?: Database["public"]["Enums"]["account_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          color?: string
+          created_at?: string
+          emoji?: string
+          id?: string
+          name?: string
+          type?: Database["public"]["Enums"]["account_type"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      debts: {
+        Row: {
+          created_at: string
+          due_day: number | null
+          id: string
+          monthly_installment: number
+          name: string
+          remaining_installments: number
+          start_date: string
+          total_amount: number
+          total_installments: number
+          type: Database["public"]["Enums"]["debt_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          due_day?: number | null
+          id?: string
+          monthly_installment: number
+          name: string
+          remaining_installments: number
+          start_date?: string
+          total_amount?: number
+          total_installments: number
+          type?: Database["public"]["Enums"]["debt_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          due_day?: number | null
+          id?: string
+          monthly_installment?: number
+          name?: string
+          remaining_installments?: number
+          start_date?: string
+          total_amount?: number
+          total_installments?: number
+          type?: Database["public"]["Enums"]["debt_type"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          essential_expenses: number
+          full_name: string | null
+          id: string
+          monthly_income: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          essential_expenses?: number
+          full_name?: string | null
+          id: string
+          monthly_income?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          essential_expenses?: number
+          full_name?: string | null
+          id?: string
+          monthly_income?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          account_id: string | null
+          amount: number
+          category: string
+          created_at: string
+          date: string
+          description: string
+          id: string
+          type: Database["public"]["Enums"]["tx_kind"]
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          category?: string
+          created_at?: string
+          date?: string
+          description?: string
+          id?: string
+          type: Database["public"]["Enums"]["tx_kind"]
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          category?: string
+          created_at?: string
+          date?: string
+          description?: string
+          id?: string
+          type?: Database["public"]["Enums"]["tx_kind"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +177,13 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      account_type:
+        | "Conta Corrente"
+        | "Poupança"
+        | "Dinheiro"
+        | "Cartão de Crédito"
+      debt_type: "Cartão de Crédito" | "Empréstimo" | "Financiamento"
+      tx_kind: "receita" | "despesa"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +310,15 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      account_type: [
+        "Conta Corrente",
+        "Poupança",
+        "Dinheiro",
+        "Cartão de Crédito",
+      ],
+      debt_type: ["Cartão de Crédito", "Empréstimo", "Financiamento"],
+      tx_kind: ["receita", "despesa"],
+    },
   },
 } as const

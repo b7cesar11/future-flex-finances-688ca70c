@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TransacoesRouteImport } from './routes/transacoes'
+import { Route as NovaTransacaoRouteImport } from './routes/nova-transacao'
 import { Route as NovaDividaRouteImport } from './routes/nova-divida'
 import { Route as MinhasDividasRouteImport } from './routes/minhas-dividas'
 import { Route as CarteiraRouteImport } from './routes/carteira'
@@ -18,6 +19,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const TransacoesRoute = TransacoesRouteImport.update({
   id: '/transacoes',
   path: '/transacoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NovaTransacaoRoute = NovaTransacaoRouteImport.update({
+  id: '/nova-transacao',
+  path: '/nova-transacao',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NovaDividaRoute = NovaDividaRouteImport.update({
@@ -46,6 +52,7 @@ export interface FileRoutesByFullPath {
   '/carteira': typeof CarteiraRoute
   '/minhas-dividas': typeof MinhasDividasRoute
   '/nova-divida': typeof NovaDividaRoute
+  '/nova-transacao': typeof NovaTransacaoRoute
   '/transacoes': typeof TransacoesRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/carteira': typeof CarteiraRoute
   '/minhas-dividas': typeof MinhasDividasRoute
   '/nova-divida': typeof NovaDividaRoute
+  '/nova-transacao': typeof NovaTransacaoRoute
   '/transacoes': typeof TransacoesRoute
 }
 export interface FileRoutesById {
@@ -61,6 +69,7 @@ export interface FileRoutesById {
   '/carteira': typeof CarteiraRoute
   '/minhas-dividas': typeof MinhasDividasRoute
   '/nova-divida': typeof NovaDividaRoute
+  '/nova-transacao': typeof NovaTransacaoRoute
   '/transacoes': typeof TransacoesRoute
 }
 export interface FileRouteTypes {
@@ -70,15 +79,23 @@ export interface FileRouteTypes {
     | '/carteira'
     | '/minhas-dividas'
     | '/nova-divida'
+    | '/nova-transacao'
     | '/transacoes'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/carteira' | '/minhas-dividas' | '/nova-divida' | '/transacoes'
+  to:
+    | '/'
+    | '/carteira'
+    | '/minhas-dividas'
+    | '/nova-divida'
+    | '/nova-transacao'
+    | '/transacoes'
   id:
     | '__root__'
     | '/'
     | '/carteira'
     | '/minhas-dividas'
     | '/nova-divida'
+    | '/nova-transacao'
     | '/transacoes'
   fileRoutesById: FileRoutesById
 }
@@ -87,6 +104,7 @@ export interface RootRouteChildren {
   CarteiraRoute: typeof CarteiraRoute
   MinhasDividasRoute: typeof MinhasDividasRoute
   NovaDividaRoute: typeof NovaDividaRoute
+  NovaTransacaoRoute: typeof NovaTransacaoRoute
   TransacoesRoute: typeof TransacoesRoute
 }
 
@@ -97,6 +115,13 @@ declare module '@tanstack/react-router' {
       path: '/transacoes'
       fullPath: '/transacoes'
       preLoaderRoute: typeof TransacoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/nova-transacao': {
+      id: '/nova-transacao'
+      path: '/nova-transacao'
+      fullPath: '/nova-transacao'
+      preLoaderRoute: typeof NovaTransacaoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/nova-divida': {
@@ -135,6 +160,7 @@ const rootRouteChildren: RootRouteChildren = {
   CarteiraRoute: CarteiraRoute,
   MinhasDividasRoute: MinhasDividasRoute,
   NovaDividaRoute: NovaDividaRoute,
+  NovaTransacaoRoute: NovaTransacaoRoute,
   TransacoesRoute: TransacoesRoute,
 }
 export const routeTree = rootRouteImport

@@ -54,6 +54,24 @@ export const initialCategorias: Category[] = [
   { id: "outros", nome: "Outros", emoji: "✨", cor: "#94a3b8" },
 ];
 
+export interface SavingsGoal {
+  id: string;
+  nome: string;
+  emoji: string;
+  cor: string;
+  valorAtual: number;
+  valorTotal: number;
+  dataAlvo: string | null;
+}
+
+export interface Investment {
+  id: string;
+  nome: string;
+  tipo: string;
+  valor: number;
+  aporteSugerido: number;
+}
+
 interface FinanceState {
   rendaMensal: number;
   gastosEssenciais: number;
@@ -61,6 +79,8 @@ interface FinanceState {
   contas: Account[];
   categorias: Category[];
   transacoes: Transaction[];
+  metas: SavingsGoal[];
+  investimentos: Investment[];
   isLoading: boolean;
   addDebt: (debt: Omit<Debt, "id" | "parcelasTotais"> & { parcelasTotais?: number }) => Promise<void>;
   addTransaction: (tx: Omit<Transaction, "id">) => Promise<void>;

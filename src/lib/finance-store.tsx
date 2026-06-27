@@ -139,6 +139,32 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  const goalsQ = useQuery({
+    queryKey: ["savings_goals"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("savings_goals")
+        .select("*")
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const investmentsQ = useQuery({
+    queryKey: ["investments"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("investments")
+        .select("*")
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+
+
   const addDebtM = useMutation({
     mutationFn: async (d: Omit<Debt, "id" | "parcelasTotais"> & { parcelasTotais?: number }) => {
       const { data: user } = await supabase.auth.getUser();

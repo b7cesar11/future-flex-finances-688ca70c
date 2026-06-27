@@ -1,5 +1,7 @@
 import { useMemo } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Bar,
   BarChart,
@@ -48,6 +50,25 @@ function Dashboard() {
     investimentos,
   } = useFinance();
 
+  const { data: greetingName } = useQuery({
+    queryKey: ["profile", "greeting"],
+    queryFn: async () => {
+      const { data: userRes } = await supabase.auth.getUser();
+      const user = userRes.user;
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .maybeSingle();
+      const full = (profile?.full_name ?? "").trim();
+      if (full) return full.split(" ")[0];
+      const meta: any = user?.user_metadata ?? {};
+      const metaName = (meta.full_name ?? meta.name ?? "").trim();
+      if (metaName) return metaName.split(" ")[0];
+      if (user?.email) return user.email.split("@")[0];
+      return "";
+    },
+  });
+
   // ===== Mês atual =====
   const now = new Date();
   const monthTx = useMemo(
@@ -91,7 +112,7 @@ function Dashboard() {
   const respiroDelta = respiro ? respiro.ended.reduce((s, d) => s + d.valorParcela, 0) : 0;
 
   return (
-    <AppShell title="Olá, Alex" subtitle="Onde você está, agora.">
+    <AppShell title={greetingName ? `Olá, ${greetingName}` : "Olá"} subtitle="Onde você está, agora.">
       {/* ============= 1. PRIORIDADE MÁXIMA ============= */}
       <section className="grid grid-cols-2 gap-3">
         <KpiCard

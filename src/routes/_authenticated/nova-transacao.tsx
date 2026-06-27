@@ -126,11 +126,15 @@ function NovaTransacao() {
           </select>
         </Field>
 
+        {error && (
+          <p className="rounded-xl bg-destructive/10 px-3 py-2 text-xs text-destructive">{error}</p>
+        )}
         <button
           type="submit"
-          className="w-full rounded-2xl bg-gradient-primary py-3 text-sm font-bold text-primary-foreground shadow-glow"
+          disabled={saving}
+          className="w-full rounded-2xl bg-gradient-primary py-3 text-sm font-bold text-primary-foreground shadow-glow disabled:opacity-50"
         >
-          Salvar
+          {saving ? "Salvando..." : "Salvar"}
         </button>
       </form>
     </AppShell>

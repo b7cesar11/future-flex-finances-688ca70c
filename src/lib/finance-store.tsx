@@ -228,6 +228,22 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       categoriaId: r.category,
       contaId: r.account_id ?? "",
     }));
+    const metas: SavingsGoal[] = (goalsQ.data ?? []).map((r: any) => ({
+      id: r.id,
+      nome: r.name,
+      emoji: r.emoji,
+      cor: r.color,
+      valorAtual: Number(r.current_amount),
+      valorTotal: Number(r.target_amount),
+      dataAlvo: r.target_date,
+    }));
+    const investimentos: Investment[] = (investmentsQ.data ?? []).map((r: any) => ({
+      id: r.id,
+      nome: r.name,
+      tipo: r.type,
+      valor: Number(r.amount),
+      aporteSugerido: Number(r.suggested_contribution),
+    }));
     return {
       rendaMensal: Number(profileQ.data?.monthly_income ?? 0),
       gastosEssenciais: Number(profileQ.data?.essential_expenses ?? 0),
@@ -235,6 +251,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       contas,
       categorias: initialCategorias,
       transacoes,
+      metas,
+      investimentos,
       isLoading:
         profileQ.isLoading || accountsQ.isLoading || debtsQ.isLoading || transactionsQ.isLoading,
       addDebt: async (d) => {
@@ -244,7 +262,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         await addTxM.mutateAsync(t);
       },
     };
-  }, [profileQ.data, accountsQ.data, debtsQ.data, transactionsQ.data, profileQ.isLoading, accountsQ.isLoading, debtsQ.isLoading, transactionsQ.isLoading, addDebtM, addTxM]);
+  }, [profileQ.data, accountsQ.data, debtsQ.data, transactionsQ.data, goalsQ.data, investmentsQ.data, profileQ.isLoading, accountsQ.isLoading, debtsQ.isLoading, transactionsQ.isLoading, addDebtM, addTxM]);
 
   return <FinanceContext.Provider value={value}>{children}</FinanceContext.Provider>;
 }

@@ -6,7 +6,7 @@ import { useFinance, type TxKind } from "@/lib/finance-store";
 
 type Search = { kind?: TxKind };
 
-export const Route = createFileRoute("/nova-transacao")({
+export const Route = createFileRoute("/_authenticated/nova-transacao")({
   validateSearch: (s: Record<string, unknown>): Search => ({
     kind: s.kind === "receita" ? "receita" : "despesa",
   }),
@@ -15,7 +15,7 @@ export const Route = createFileRoute("/nova-transacao")({
 });
 
 function NovaTransacao() {
-  const { kind = "despesa" } = useSearch({ from: "/nova-transacao" });
+  const { kind = "despesa" } = useSearch({ from: "/_authenticated/nova-transacao" });
   const { categorias, contas, addTransaction } = useFinance();
   const navigate = useNavigate();
 
@@ -24,20 +24,29 @@ function NovaTransacao() {
   const [valor, setValor] = useState("");
   const [categoriaId, setCategoriaId] = useState(categorias[0]?.id ?? "");
   const [contaId, setContaId] = useState(contas[0]?.id ?? "");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const v = parseFloat(valor.replace(",", "."));
-    if (!descricao || !v) return;
-    addTransaction({
-      kind: tipo,
-      descricao,
-      valor: v,
-      data: new Date().toISOString().slice(0, 10),
-      categoriaId,
-      contaId,
-    });
-    void navigate({ to: "/transacoes" });
+    if (!descricao || !v || saving) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await addTransaction({
+        kind: tipo,
+        descricao,
+        valor: v,
+        data: new Date().toISOString().slice(0, 10),
+        categoriaId,
+        contaId,
+      });
+      void navigate({ to: "/transacoes" });
+    } catch (err: any) {
+      setError(err?.message ?? "Erro ao salvar");
+      setSaving(false);
+    }
   };
 
   return (
@@ -117,11 +126,15 @@ function NovaTransacao() {
           </select>
         </Field>
 
+        {error && (
+          <p className="rounded-xl bg-destructive/10 px-3 py-2 text-xs text-destructive">{error}</p>
+        )}
         <button
           type="submit"
-          className="w-full rounded-2xl bg-gradient-primary py-3 text-sm font-bold text-primary-foreground shadow-glow"
+          disabled={saving}
+          className="w-full rounded-2xl bg-gradient-primary py-3 text-sm font-bold text-primary-foreground shadow-glow disabled:opacity-50"
         >
-          Salvar
+          {saving ? "Salvando..." : "Salvar"}
         </button>
       </form>
     </AppShell>

@@ -4,7 +4,7 @@ import { AppShell } from "@/components/AppShell";
 import { ProgressBar } from "@/components/ProgressBar";
 import { formatBRL, useFinance, type DebtType } from "@/lib/finance-store";
 
-export const Route = createFileRoute("/minhas-dividas")({
+export const Route = createFileRoute("/_authenticated/minhas-dividas")({
   head: () => ({
     meta: [
       { title: "Minhas Dívidas" },

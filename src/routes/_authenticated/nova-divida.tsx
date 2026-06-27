@@ -5,7 +5,7 @@ import { AppShell } from "@/components/AppShell";
 import { cn } from "@/lib/utils";
 import { useFinance, type DebtType } from "@/lib/finance-store";
 
-export const Route = createFileRoute("/nova-divida")({
+export const Route = createFileRoute("/_authenticated/nova-divida")({
   head: () => ({
     meta: [
       { title: "Nova Dívida" },
@@ -28,19 +28,28 @@ function NovaDivida() {
   const [valor, setValor] = useState("");
   const [parcelas, setParcelas] = useState("");
   const [tipo, setTipo] = useState<DebtType>("Cartão de Crédito");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const canSubmit = nome.trim() && Number(valor) > 0 && Number(parcelas) > 0;
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!canSubmit) return;
-    addDebt({
-      nome: nome.trim(),
-      valorParcela: Number(valor),
-      parcelasRestantes: Number(parcelas),
-      tipo,
-    });
-    navigate({ to: "/minhas-dividas" });
+    if (!canSubmit || saving) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await addDebt({
+        nome: nome.trim(),
+        valorParcela: Number(valor),
+        parcelasRestantes: Number(parcelas),
+        tipo,
+      });
+      navigate({ to: "/minhas-dividas" });
+    } catch (err: any) {
+      setError(err?.message ?? "Erro ao salvar");
+      setSaving(false);
+    }
   }
 
   return (
@@ -106,12 +115,15 @@ function NovaDivida() {
           </div>
         </Field>
 
+        {error && (
+          <p className="rounded-xl bg-destructive/10 px-3 py-2 text-xs text-destructive">{error}</p>
+        )}
         <button
           type="submit"
-          disabled={!canSubmit}
+          disabled={!canSubmit || saving}
           className="mt-4 w-full rounded-2xl bg-gradient-primary px-5 py-4 text-base font-semibold text-primary-foreground shadow-glow transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
         >
-          Salvar projeção
+          {saving ? "Salvando..." : "Salvar projeção"}
         </button>
       </form>
     </AppShell>

@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { formatBRLFull, useFinance } from "@/lib/finance-store";
 
-export const Route = createFileRoute("/transacoes")({
+export const Route = createFileRoute("/_authenticated/transacoes")({
   head: () => ({
     meta: [
       { title: "Transações — Extrato" },

@@ -112,7 +112,7 @@ function Dashboard() {
   const respiroDelta = respiro ? respiro.ended.reduce((s, d) => s + d.valorParcela, 0) : 0;
 
   return (
-    <AppShell title="Olá, Alex" subtitle="Onde você está, agora.">
+    <AppShell title={greetingName ? `Olá, ${greetingName}` : "Olá"} subtitle="Onde você está, agora.">
       {/* ============= 1. PRIORIDADE MÁXIMA ============= */}
       <section className="grid grid-cols-2 gap-3">
         <KpiCard

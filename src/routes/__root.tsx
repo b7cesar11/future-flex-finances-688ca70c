@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
   Link,
@@ -11,7 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { supabase } from "@/integrations/supabase/client";
+import { FinanceProvider } from "../lib/finance-store";
 
 function NotFoundComponent() {
   return (
@@ -79,13 +79,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { name: "description", content: "Future Finances projects your future disposable income by forecasting debt payoff timelines." },
       { name: "author", content: "Lovable" },
       { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:description", content: "Future Finances projects your future disposable income by forecasting debt payoff timelines." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Lovable App" },
+      { name: "twitter:description", content: "Future Finances projects your future disposable income by forecasting debt payoff timelines." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/6828a0fd-556e-416f-b7b5-326bd85f0086/id-preview-d32d1eb7--10f77983-8093-4086-b995-8cde33c79990.lovable.app-1782522512486.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/6828a0fd-556e-416f-b7b5-326bd85f0086/id-preview-d32d1eb7--10f77983-8093-4086-b995-8cde33c79990.lovable.app-1782522512486.png" },
     ],
     links: [
       {
@@ -116,25 +120,13 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthListener />
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <FinanceProvider>
+        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+        <Outlet />
+      </FinanceProvider>
     </QueryClientProvider>
   );
-}
-
-function AuthListener() {
-  const router = useRouter();
-  const qc = useQueryClient();
-  useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      router.invalidate();
-      if (event !== "SIGNED_OUT") qc.invalidateQueries();
-    });
-    return () => sub.subscription.unsubscribe();
-  }, [router, qc]);
-  return null;
 }

@@ -3,7 +3,7 @@ import { Wallet, Plus } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { formatBRLFull, useFinance } from "@/lib/finance-store";
 
-export const Route = createFileRoute("/carteira")({
+export const Route = createFileRoute("/_authenticated/carteira")({
   head: () => ({
     meta: [
       { title: "Carteira — Saldo atual" },

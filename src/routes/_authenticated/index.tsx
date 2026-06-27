@@ -17,7 +17,7 @@ import { AppShell } from "@/components/AppShell";
 import { ProgressBar } from "@/components/ProgressBar";
 import { buildProjection, formatBRL, formatBRLFull, useFinance } from "@/lib/finance-store";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
       { title: "Início — Controle Financeiro" },

@@ -6,7 +6,7 @@ import { useFinance, type TxKind } from "@/lib/finance-store";
 
 type Search = { kind?: TxKind };
 
-export const Route = createFileRoute("/nova-transacao")({
+export const Route = createFileRoute("/_authenticated/nova-transacao")({
   validateSearch: (s: Record<string, unknown>): Search => ({
     kind: s.kind === "receita" ? "receita" : "despesa",
   }),
@@ -15,7 +15,7 @@ export const Route = createFileRoute("/nova-transacao")({
 });
 
 function NovaTransacao() {
-  const { kind = "despesa" } = useSearch({ from: "/nova-transacao" });
+  const { kind = "despesa" } = useSearch({ from: "/_authenticated/nova-transacao" });
   const { categorias, contas, addTransaction } = useFinance();
   const navigate = useNavigate();
 

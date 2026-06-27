@@ -5,7 +5,7 @@ import { AppShell } from "@/components/AppShell";
 import { cn } from "@/lib/utils";
 import { useFinance, type DebtType } from "@/lib/finance-store";
 
-export const Route = createFileRoute("/nova-divida")({
+export const Route = createFileRoute("/_authenticated/nova-divida")({
   head: () => ({
     meta: [
       { title: "Nova Dívida" },

@@ -24,20 +24,29 @@ function NovaTransacao() {
   const [valor, setValor] = useState("");
   const [categoriaId, setCategoriaId] = useState(categorias[0]?.id ?? "");
   const [contaId, setContaId] = useState(contas[0]?.id ?? "");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const v = parseFloat(valor.replace(",", "."));
-    if (!descricao || !v) return;
-    addTransaction({
-      kind: tipo,
-      descricao,
-      valor: v,
-      data: new Date().toISOString().slice(0, 10),
-      categoriaId,
-      contaId,
-    });
-    void navigate({ to: "/transacoes" });
+    if (!descricao || !v || saving) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await addTransaction({
+        kind: tipo,
+        descricao,
+        valor: v,
+        data: new Date().toISOString().slice(0, 10),
+        categoriaId,
+        contaId,
+      });
+      void navigate({ to: "/transacoes" });
+    } catch (err: any) {
+      setError(err?.message ?? "Erro ao salvar");
+      setSaving(false);
+    }
   };
 
   return (

@@ -9,73 +9,91 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TransacoesRouteImport } from './routes/transacoes'
-import { Route as NovaTransacaoRouteImport } from './routes/nova-transacao'
-import { Route as NovaDividaRouteImport } from './routes/nova-divida'
-import { Route as MinhasDividasRouteImport } from './routes/minhas-dividas'
-import { Route as CarteiraRouteImport } from './routes/carteira'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedTransacoesRouteImport } from './routes/_authenticated/transacoes'
+import { Route as AuthenticatedNovaTransacaoRouteImport } from './routes/_authenticated/nova-transacao'
+import { Route as AuthenticatedNovaDividaRouteImport } from './routes/_authenticated/nova-divida'
+import { Route as AuthenticatedMinhasDividasRouteImport } from './routes/_authenticated/minhas-dividas'
+import { Route as AuthenticatedCarteiraRouteImport } from './routes/_authenticated/carteira'
 
-const TransacoesRoute = TransacoesRouteImport.update({
-  id: '/transacoes',
-  path: '/transacoes',
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const NovaTransacaoRoute = NovaTransacaoRouteImport.update({
-  id: '/nova-transacao',
-  path: '/nova-transacao',
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const NovaDividaRoute = NovaDividaRouteImport.update({
-  id: '/nova-divida',
-  path: '/nova-divida',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MinhasDividasRoute = MinhasDividasRouteImport.update({
-  id: '/minhas-dividas',
-  path: '/minhas-dividas',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CarteiraRoute = CarteiraRouteImport.update({
-  id: '/carteira',
-  path: '/carteira',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IndexRoute = IndexRouteImport.update({
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedTransacoesRoute = AuthenticatedTransacoesRouteImport.update({
+  id: '/transacoes',
+  path: '/transacoes',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedNovaTransacaoRoute =
+  AuthenticatedNovaTransacaoRouteImport.update({
+    id: '/nova-transacao',
+    path: '/nova-transacao',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedNovaDividaRoute = AuthenticatedNovaDividaRouteImport.update({
+  id: '/nova-divida',
+  path: '/nova-divida',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMinhasDividasRoute =
+  AuthenticatedMinhasDividasRouteImport.update({
+    id: '/minhas-dividas',
+    path: '/minhas-dividas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCarteiraRoute = AuthenticatedCarteiraRouteImport.update({
+  id: '/carteira',
+  path: '/carteira',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/carteira': typeof CarteiraRoute
-  '/minhas-dividas': typeof MinhasDividasRoute
-  '/nova-divida': typeof NovaDividaRoute
-  '/nova-transacao': typeof NovaTransacaoRoute
-  '/transacoes': typeof TransacoesRoute
+  '/': typeof AuthenticatedIndexRoute
+  '/auth': typeof AuthRoute
+  '/carteira': typeof AuthenticatedCarteiraRoute
+  '/minhas-dividas': typeof AuthenticatedMinhasDividasRoute
+  '/nova-divida': typeof AuthenticatedNovaDividaRoute
+  '/nova-transacao': typeof AuthenticatedNovaTransacaoRoute
+  '/transacoes': typeof AuthenticatedTransacoesRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/carteira': typeof CarteiraRoute
-  '/minhas-dividas': typeof MinhasDividasRoute
-  '/nova-divida': typeof NovaDividaRoute
-  '/nova-transacao': typeof NovaTransacaoRoute
-  '/transacoes': typeof TransacoesRoute
+  '/auth': typeof AuthRoute
+  '/carteira': typeof AuthenticatedCarteiraRoute
+  '/minhas-dividas': typeof AuthenticatedMinhasDividasRoute
+  '/nova-divida': typeof AuthenticatedNovaDividaRoute
+  '/nova-transacao': typeof AuthenticatedNovaTransacaoRoute
+  '/transacoes': typeof AuthenticatedTransacoesRoute
+  '/': typeof AuthenticatedIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/carteira': typeof CarteiraRoute
-  '/minhas-dividas': typeof MinhasDividasRoute
-  '/nova-divida': typeof NovaDividaRoute
-  '/nova-transacao': typeof NovaTransacaoRoute
-  '/transacoes': typeof TransacoesRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/_authenticated/carteira': typeof AuthenticatedCarteiraRoute
+  '/_authenticated/minhas-dividas': typeof AuthenticatedMinhasDividasRoute
+  '/_authenticated/nova-divida': typeof AuthenticatedNovaDividaRoute
+  '/_authenticated/nova-transacao': typeof AuthenticatedNovaTransacaoRoute
+  '/_authenticated/transacoes': typeof AuthenticatedTransacoesRoute
+  '/_authenticated/': typeof AuthenticatedIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/auth'
     | '/carteira'
     | '/minhas-dividas'
     | '/nova-divida'
@@ -83,85 +101,115 @@ export interface FileRouteTypes {
     | '/transacoes'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
+    | '/auth'
     | '/carteira'
     | '/minhas-dividas'
     | '/nova-divida'
     | '/nova-transacao'
     | '/transacoes'
+    | '/'
   id:
     | '__root__'
-    | '/'
-    | '/carteira'
-    | '/minhas-dividas'
-    | '/nova-divida'
-    | '/nova-transacao'
-    | '/transacoes'
+    | '/_authenticated'
+    | '/auth'
+    | '/_authenticated/carteira'
+    | '/_authenticated/minhas-dividas'
+    | '/_authenticated/nova-divida'
+    | '/_authenticated/nova-transacao'
+    | '/_authenticated/transacoes'
+    | '/_authenticated/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  CarteiraRoute: typeof CarteiraRoute
-  MinhasDividasRoute: typeof MinhasDividasRoute
-  NovaDividaRoute: typeof NovaDividaRoute
-  NovaTransacaoRoute: typeof NovaTransacaoRoute
-  TransacoesRoute: typeof TransacoesRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/transacoes': {
-      id: '/transacoes'
-      path: '/transacoes'
-      fullPath: '/transacoes'
-      preLoaderRoute: typeof TransacoesRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/nova-transacao': {
-      id: '/nova-transacao'
-      path: '/nova-transacao'
-      fullPath: '/nova-transacao'
-      preLoaderRoute: typeof NovaTransacaoRouteImport
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/nova-divida': {
-      id: '/nova-divida'
-      path: '/nova-divida'
-      fullPath: '/nova-divida'
-      preLoaderRoute: typeof NovaDividaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/minhas-dividas': {
-      id: '/minhas-dividas'
-      path: '/minhas-dividas'
-      fullPath: '/minhas-dividas'
-      preLoaderRoute: typeof MinhasDividasRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/carteira': {
-      id: '/carteira'
-      path: '/carteira'
-      fullPath: '/carteira'
-      preLoaderRoute: typeof CarteiraRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
+    '/_authenticated/': {
+      id: '/_authenticated/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/transacoes': {
+      id: '/_authenticated/transacoes'
+      path: '/transacoes'
+      fullPath: '/transacoes'
+      preLoaderRoute: typeof AuthenticatedTransacoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/nova-transacao': {
+      id: '/_authenticated/nova-transacao'
+      path: '/nova-transacao'
+      fullPath: '/nova-transacao'
+      preLoaderRoute: typeof AuthenticatedNovaTransacaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/nova-divida': {
+      id: '/_authenticated/nova-divida'
+      path: '/nova-divida'
+      fullPath: '/nova-divida'
+      preLoaderRoute: typeof AuthenticatedNovaDividaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/minhas-dividas': {
+      id: '/_authenticated/minhas-dividas'
+      path: '/minhas-dividas'
+      fullPath: '/minhas-dividas'
+      preLoaderRoute: typeof AuthenticatedMinhasDividasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/carteira': {
+      id: '/_authenticated/carteira'
+      path: '/carteira'
+      fullPath: '/carteira'
+      preLoaderRoute: typeof AuthenticatedCarteiraRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedCarteiraRoute: typeof AuthenticatedCarteiraRoute
+  AuthenticatedMinhasDividasRoute: typeof AuthenticatedMinhasDividasRoute
+  AuthenticatedNovaDividaRoute: typeof AuthenticatedNovaDividaRoute
+  AuthenticatedNovaTransacaoRoute: typeof AuthenticatedNovaTransacaoRoute
+  AuthenticatedTransacoesRoute: typeof AuthenticatedTransacoesRoute
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedCarteiraRoute: AuthenticatedCarteiraRoute,
+  AuthenticatedMinhasDividasRoute: AuthenticatedMinhasDividasRoute,
+  AuthenticatedNovaDividaRoute: AuthenticatedNovaDividaRoute,
+  AuthenticatedNovaTransacaoRoute: AuthenticatedNovaTransacaoRoute,
+  AuthenticatedTransacoesRoute: AuthenticatedTransacoesRoute,
+  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  CarteiraRoute: CarteiraRoute,
-  MinhasDividasRoute: MinhasDividasRoute,
-  NovaDividaRoute: NovaDividaRoute,
-  NovaTransacaoRoute: NovaTransacaoRoute,
-  TransacoesRoute: TransacoesRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

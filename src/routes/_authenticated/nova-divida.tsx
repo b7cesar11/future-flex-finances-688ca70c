@@ -28,19 +28,28 @@ function NovaDivida() {
   const [valor, setValor] = useState("");
   const [parcelas, setParcelas] = useState("");
   const [tipo, setTipo] = useState<DebtType>("Cartão de Crédito");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const canSubmit = nome.trim() && Number(valor) > 0 && Number(parcelas) > 0;
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!canSubmit) return;
-    addDebt({
-      nome: nome.trim(),
-      valorParcela: Number(valor),
-      parcelasRestantes: Number(parcelas),
-      tipo,
-    });
-    navigate({ to: "/minhas-dividas" });
+    if (!canSubmit || saving) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await addDebt({
+        nome: nome.trim(),
+        valorParcela: Number(valor),
+        parcelasRestantes: Number(parcelas),
+        tipo,
+      });
+      navigate({ to: "/minhas-dividas" });
+    } catch (err: any) {
+      setError(err?.message ?? "Erro ao salvar");
+      setSaving(false);
+    }
   }
 
   return (

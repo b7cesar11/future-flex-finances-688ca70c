@@ -115,12 +115,15 @@ function NovaDivida() {
           </div>
         </Field>
 
+        {error && (
+          <p className="rounded-xl bg-destructive/10 px-3 py-2 text-xs text-destructive">{error}</p>
+        )}
         <button
           type="submit"
-          disabled={!canSubmit}
+          disabled={!canSubmit || saving}
           className="mt-4 w-full rounded-2xl bg-gradient-primary px-5 py-4 text-base font-semibold text-primary-foreground shadow-glow transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
         >
-          Salvar projeção
+          {saving ? "Salvando..." : "Salvar projeção"}
         </button>
       </form>
     </AppShell>

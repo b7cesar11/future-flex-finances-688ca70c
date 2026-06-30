@@ -6,12 +6,7 @@ import { cn } from "@/lib/utils";
 import { useFinance, type DebtType } from "@/lib/finance-store";
 
 export const Route = createFileRoute("/_authenticated/nova-divida")({
-  head: () => ({
-    meta: [
-      { title: "Nova Dívida" },
-      { name: "description", content: "Cadastre uma nova dívida em segundos." },
-    ],
-  }),
+  head: () => ({ meta: [{ title: "Nova Dívida" }] }),
   component: NovaDivida,
 });
 
@@ -28,6 +23,8 @@ function NovaDivida() {
   const [valor, setValor] = useState("");
   const [parcelas, setParcelas] = useState("");
   const [tipo, setTipo] = useState<DebtType>("Cartão de Crédito");
+  const [dueDay, setDueDay] = useState("10");
+  const [isVariable, setIsVariable] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,9 +38,11 @@ function NovaDivida() {
     try {
       await addDebt({
         nome: nome.trim(),
-        valorParcela: Number(valor),
+        valorParcela: Number(valor.replace(",", ".")),
         parcelasRestantes: Number(parcelas),
         tipo,
+        dueDay: dueDay ? Number(dueDay) : null,
+        isVariable,
       });
       navigate({ to: "/minhas-dividas" });
     } catch (err: any) {
@@ -53,7 +52,7 @@ function NovaDivida() {
   }
 
   return (
-    <AppShell title="Nova dívida" subtitle="Adicione em poucos toques.">
+    <AppShell title="Nova dívida" subtitle="Adicione em poucos toques." hidePeriodFilter>
       <form onSubmit={handleSubmit} className="space-y-5">
         <Field label="O que é?">
           <input
@@ -73,9 +72,9 @@ function NovaDivida() {
               <input
                 inputMode="decimal"
                 value={valor}
-                onChange={(e) => setValor(e.target.value.replace(/[^\d.]/g, ""))}
+                onChange={(e) => setValor(e.target.value.replace(/[^\d.,]/g, ""))}
                 placeholder="0"
-                className="w-full rounded-2xl bg-surface py-3.5 pl-10 pr-3 text-base text-foreground placeholder:text-muted-foreground/60 outline-none ring-1 ring-border focus:ring-2 focus:ring-primary"
+                className="w-full rounded-2xl bg-surface py-3.5 pl-10 pr-3 text-base text-foreground outline-none ring-1 ring-border focus:ring-2 focus:ring-primary"
               />
             </div>
           </Field>
@@ -85,8 +84,35 @@ function NovaDivida() {
               value={parcelas}
               onChange={(e) => setParcelas(e.target.value.replace(/\D/g, ""))}
               placeholder="12"
-              className="w-full rounded-2xl bg-surface px-4 py-3.5 text-base text-foreground placeholder:text-muted-foreground/60 outline-none ring-1 ring-border focus:ring-2 focus:ring-primary"
+              className="w-full rounded-2xl bg-surface px-4 py-3.5 text-base text-foreground outline-none ring-1 ring-border focus:ring-2 focus:ring-primary"
             />
+          </Field>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Dia do vencimento">
+            <input
+              inputMode="numeric"
+              value={dueDay}
+              onChange={(e) => setDueDay(e.target.value.replace(/\D/g, "").slice(0, 2))}
+              placeholder="10"
+              className="w-full rounded-2xl bg-surface px-4 py-3.5 text-base text-foreground outline-none ring-1 ring-border focus:ring-2 focus:ring-primary"
+            />
+          </Field>
+          <Field label="Variável?">
+            <button
+              type="button"
+              onClick={() => setIsVariable((v) => !v)}
+              className={cn(
+                "flex w-full items-center justify-between rounded-2xl px-4 py-3.5 text-sm font-semibold transition-all ring-1",
+                isVariable
+                  ? "bg-warning/15 text-warning ring-warning/40"
+                  : "bg-surface text-muted-foreground ring-border",
+              )}
+            >
+              {isVariable ? "Sim" : "Não"}
+              {isVariable && <Check className="h-4 w-4" />}
+            </button>
           </Field>
         </div>
 
@@ -121,7 +147,7 @@ function NovaDivida() {
         <button
           type="submit"
           disabled={!canSubmit || saving}
-          className="mt-4 w-full rounded-2xl bg-gradient-primary px-5 py-4 text-base font-semibold text-primary-foreground shadow-glow transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
+          className="mt-4 w-full rounded-2xl bg-gradient-primary px-5 py-4 text-base font-semibold text-primary-foreground shadow-glow disabled:opacity-40"
         >
           {saving ? "Salvando..." : "Salvar projeção"}
         </button>

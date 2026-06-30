@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Pin } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { useFinance, type TxKind } from "@/lib/finance-store";
+import { useFinance, type TxKind, type PaymentStatus } from "@/lib/finance-store";
 
 type Search = { kind?: TxKind };
 
@@ -19,26 +19,35 @@ function NovaTransacao() {
   const { categorias, contas, addTransaction } = useFinance();
   const navigate = useNavigate();
 
+  const today = new Date().toISOString().slice(0, 10);
+
   const [tipo, setTipo] = useState<TxKind>(kind);
   const [descricao, setDescricao] = useState("");
   const [valor, setValor] = useState("");
   const [categoriaId, setCategoriaId] = useState(categorias[0]?.id ?? "");
   const [contaId, setContaId] = useState(contas[0]?.id ?? "");
+  const [data, setData] = useState(today);
+  const [dueDate, setDueDate] = useState(today);
+  const [status, setStatus] = useState<PaymentStatus>("pago");
+  const [isFixed, setIsFixed] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const v = parseFloat(valor.replace(",", "."));
-    if (!descricao || !v || saving) return;
+    if (!v || saving) return;
     setSaving(true);
     setError(null);
     try {
       await addTransaction({
         kind: tipo,
-        descricao,
+        descricao: descricao || categorias.find((c) => c.id === categoriaId)?.nome || "Lançamento",
         valor: v,
-        data: new Date().toISOString().slice(0, 10),
+        data,
+        dueDate,
+        status,
+        isFixed,
         categoriaId,
         contaId,
       });
@@ -50,7 +59,11 @@ function NovaTransacao() {
   };
 
   return (
-    <AppShell title={tipo === "receita" ? "Nova receita" : "Nova despesa"} subtitle="Registre agora">
+    <AppShell
+      title={tipo === "receita" ? "Nova receita" : "Nova despesa"}
+      subtitle="Lance com data, vencimento e status"
+      hidePeriodFilter
+    >
       <button
         type="button"
         onClick={() => navigate({ to: "/" })}
@@ -84,7 +97,7 @@ function NovaTransacao() {
             value={descricao}
             onChange={(e) => setDescricao(e.target.value)}
             placeholder="Ex: Mercado da semana"
-            className="w-full rounded-xl bg-surface-elevated px-3 py-2.5 text-sm outline-none placeholder:text-muted-foreground"
+            className="w-full rounded-xl bg-surface-elevated px-3 py-2.5 text-sm outline-none"
           />
         </Field>
 
@@ -94,8 +107,44 @@ function NovaTransacao() {
             onChange={(e) => setValor(e.target.value)}
             inputMode="decimal"
             placeholder="0,00"
-            className="w-full rounded-xl bg-surface-elevated px-3 py-2.5 text-base font-semibold tabular-nums outline-none placeholder:text-muted-foreground"
+            className="w-full rounded-xl bg-surface-elevated px-3 py-2.5 text-base font-semibold tabular-nums outline-none"
           />
+        </Field>
+
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="Data">
+            <input
+              type="date"
+              value={data}
+              onChange={(e) => setData(e.target.value)}
+              className="w-full rounded-xl bg-surface-elevated px-3 py-2.5 text-sm outline-none"
+            />
+          </Field>
+          <Field label="Vencimento">
+            <input
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              className="w-full rounded-xl bg-surface-elevated px-3 py-2.5 text-sm outline-none"
+            />
+          </Field>
+        </div>
+
+        <Field label="Status">
+          <div className="grid grid-cols-3 gap-1 rounded-xl bg-secondary p-1">
+            {(["pago", "pendente", "atrasado"] as PaymentStatus[]).map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setStatus(s)}
+                className={`rounded-lg py-1.5 text-[11px] font-semibold capitalize ${
+                  status === s ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+                }`}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
         </Field>
 
         <Field label="Categoria">
@@ -125,6 +174,18 @@ function NovaTransacao() {
             ))}
           </select>
         </Field>
+
+        <label className="flex items-center justify-between rounded-xl bg-surface-elevated px-3 py-2.5">
+          <span className="flex items-center gap-2 text-sm">
+            <Pin className="h-4 w-4 text-accent" /> Despesa fixa (água, luz, internet…)
+          </span>
+          <input
+            type="checkbox"
+            checked={isFixed}
+            onChange={(e) => setIsFixed(e.target.checked)}
+            className="h-5 w-5 accent-primary"
+          />
+        </label>
 
         {error && (
           <p className="rounded-xl bg-destructive/10 px-3 py-2 text-xs text-destructive">{error}</p>

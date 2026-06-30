@@ -14,18 +14,19 @@ export const Route = createFileRoute("/_authenticated/carteira")({
 });
 
 function Carteira() {
-  const { contas } = useFinance();
-  const total = contas.reduce((s, c) => s + c.saldo, 0);
+  const { contas, saldoReal } = useFinance();
 
   return (
-    <AppShell title="Carteira" subtitle="Seu dinheiro em todas as contas">
+    <AppShell title="Carteira" subtitle="Saldo real, calculado dos lançamentos pagos">
       <section className="overflow-hidden rounded-3xl bg-gradient-primary p-5 text-primary-foreground shadow-glow">
         <div className="flex items-center justify-between">
           <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Saldo geral</p>
           <Wallet className="h-5 w-5 opacity-80" />
         </div>
-        <p className="mt-2 text-3xl font-bold tabular-nums">{formatBRLFull(total)}</p>
-        <p className="mt-1 text-xs opacity-80">{contas.length} contas conectadas</p>
+        <p className="mt-2 text-3xl font-bold tabular-nums">{formatBRLFull(saldoReal)}</p>
+        <p className="mt-1 text-xs opacity-80">
+          {contas.length} contas · atualiza a cada pagamento marcado
+        </p>
       </section>
 
       <section className="mt-6">
@@ -41,16 +42,17 @@ function Carteira() {
 
         <ul className="space-y-3">
           {contas.map((c) => (
-            <li
-              key={c.id}
-              className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-card"
-            >
-              <span className={`flex h-12 w-12 items-center justify-center rounded-2xl text-xl ${c.cor}`}>
+            <li key={c.id} className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-card">
+              <span
+                className={`flex h-12 w-12 items-center justify-center rounded-2xl text-xl ${c.cor}`}
+              >
                 {c.emoji}
               </span>
-              <div className="flex-1 min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-foreground">{c.nome}</p>
-                <p className="text-xs text-muted-foreground">{c.tipo}</p>
+                <p className="text-xs text-muted-foreground">
+                  {c.tipo} · inicial {formatBRLFull(c.saldoInicial)}
+                </p>
               </div>
               <p
                 className={`text-base font-bold tabular-nums ${

@@ -13,7 +13,11 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedTransacoesRouteImport } from './routes/_authenticated/transacoes'
+import { Route as AuthenticatedTerceirosRouteImport } from './routes/_authenticated/terceiros'
+import { Route as AuthenticatedReceitasRouteImport } from './routes/_authenticated/receitas'
+import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
 import { Route as AuthenticatedNovaTransacaoRouteImport } from './routes/_authenticated/nova-transacao'
+import { Route as AuthenticatedNovaTerceirosRouteImport } from './routes/_authenticated/nova-terceiros'
 import { Route as AuthenticatedNovaDividaRouteImport } from './routes/_authenticated/nova-divida'
 import { Route as AuthenticatedMinhasDividasRouteImport } from './routes/_authenticated/minhas-dividas'
 import { Route as AuthenticatedCarteiraRouteImport } from './routes/_authenticated/carteira'
@@ -37,10 +41,31 @@ const AuthenticatedTransacoesRoute = AuthenticatedTransacoesRouteImport.update({
   path: '/transacoes',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedTerceirosRoute = AuthenticatedTerceirosRouteImport.update({
+  id: '/terceiros',
+  path: '/terceiros',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedReceitasRoute = AuthenticatedReceitasRouteImport.update({
+  id: '/receitas',
+  path: '/receitas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPerfilRoute = AuthenticatedPerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedNovaTransacaoRoute =
   AuthenticatedNovaTransacaoRouteImport.update({
     id: '/nova-transacao',
     path: '/nova-transacao',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedNovaTerceirosRoute =
+  AuthenticatedNovaTerceirosRouteImport.update({
+    id: '/nova-terceiros',
+    path: '/nova-terceiros',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedNovaDividaRoute = AuthenticatedNovaDividaRouteImport.update({
@@ -66,7 +91,11 @@ export interface FileRoutesByFullPath {
   '/carteira': typeof AuthenticatedCarteiraRoute
   '/minhas-dividas': typeof AuthenticatedMinhasDividasRoute
   '/nova-divida': typeof AuthenticatedNovaDividaRoute
+  '/nova-terceiros': typeof AuthenticatedNovaTerceirosRoute
   '/nova-transacao': typeof AuthenticatedNovaTransacaoRoute
+  '/perfil': typeof AuthenticatedPerfilRoute
+  '/receitas': typeof AuthenticatedReceitasRoute
+  '/terceiros': typeof AuthenticatedTerceirosRoute
   '/transacoes': typeof AuthenticatedTransacoesRoute
 }
 export interface FileRoutesByTo {
@@ -74,7 +103,11 @@ export interface FileRoutesByTo {
   '/carteira': typeof AuthenticatedCarteiraRoute
   '/minhas-dividas': typeof AuthenticatedMinhasDividasRoute
   '/nova-divida': typeof AuthenticatedNovaDividaRoute
+  '/nova-terceiros': typeof AuthenticatedNovaTerceirosRoute
   '/nova-transacao': typeof AuthenticatedNovaTransacaoRoute
+  '/perfil': typeof AuthenticatedPerfilRoute
+  '/receitas': typeof AuthenticatedReceitasRoute
+  '/terceiros': typeof AuthenticatedTerceirosRoute
   '/transacoes': typeof AuthenticatedTransacoesRoute
   '/': typeof AuthenticatedIndexRoute
 }
@@ -85,7 +118,11 @@ export interface FileRoutesById {
   '/_authenticated/carteira': typeof AuthenticatedCarteiraRoute
   '/_authenticated/minhas-dividas': typeof AuthenticatedMinhasDividasRoute
   '/_authenticated/nova-divida': typeof AuthenticatedNovaDividaRoute
+  '/_authenticated/nova-terceiros': typeof AuthenticatedNovaTerceirosRoute
   '/_authenticated/nova-transacao': typeof AuthenticatedNovaTransacaoRoute
+  '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
+  '/_authenticated/receitas': typeof AuthenticatedReceitasRoute
+  '/_authenticated/terceiros': typeof AuthenticatedTerceirosRoute
   '/_authenticated/transacoes': typeof AuthenticatedTransacoesRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
 }
@@ -97,7 +134,11 @@ export interface FileRouteTypes {
     | '/carteira'
     | '/minhas-dividas'
     | '/nova-divida'
+    | '/nova-terceiros'
     | '/nova-transacao'
+    | '/perfil'
+    | '/receitas'
+    | '/terceiros'
     | '/transacoes'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -105,7 +146,11 @@ export interface FileRouteTypes {
     | '/carteira'
     | '/minhas-dividas'
     | '/nova-divida'
+    | '/nova-terceiros'
     | '/nova-transacao'
+    | '/perfil'
+    | '/receitas'
+    | '/terceiros'
     | '/transacoes'
     | '/'
   id:
@@ -115,7 +160,11 @@ export interface FileRouteTypes {
     | '/_authenticated/carteira'
     | '/_authenticated/minhas-dividas'
     | '/_authenticated/nova-divida'
+    | '/_authenticated/nova-terceiros'
     | '/_authenticated/nova-transacao'
+    | '/_authenticated/perfil'
+    | '/_authenticated/receitas'
+    | '/_authenticated/terceiros'
     | '/_authenticated/transacoes'
     | '/_authenticated/'
   fileRoutesById: FileRoutesById
@@ -155,11 +204,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTransacoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/terceiros': {
+      id: '/_authenticated/terceiros'
+      path: '/terceiros'
+      fullPath: '/terceiros'
+      preLoaderRoute: typeof AuthenticatedTerceirosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/receitas': {
+      id: '/_authenticated/receitas'
+      path: '/receitas'
+      fullPath: '/receitas'
+      preLoaderRoute: typeof AuthenticatedReceitasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/perfil': {
+      id: '/_authenticated/perfil'
+      path: '/perfil'
+      fullPath: '/perfil'
+      preLoaderRoute: typeof AuthenticatedPerfilRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/nova-transacao': {
       id: '/_authenticated/nova-transacao'
       path: '/nova-transacao'
       fullPath: '/nova-transacao'
       preLoaderRoute: typeof AuthenticatedNovaTransacaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/nova-terceiros': {
+      id: '/_authenticated/nova-terceiros'
+      path: '/nova-terceiros'
+      fullPath: '/nova-terceiros'
+      preLoaderRoute: typeof AuthenticatedNovaTerceirosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/nova-divida': {
@@ -190,7 +267,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCarteiraRoute: typeof AuthenticatedCarteiraRoute
   AuthenticatedMinhasDividasRoute: typeof AuthenticatedMinhasDividasRoute
   AuthenticatedNovaDividaRoute: typeof AuthenticatedNovaDividaRoute
+  AuthenticatedNovaTerceirosRoute: typeof AuthenticatedNovaTerceirosRoute
   AuthenticatedNovaTransacaoRoute: typeof AuthenticatedNovaTransacaoRoute
+  AuthenticatedPerfilRoute: typeof AuthenticatedPerfilRoute
+  AuthenticatedReceitasRoute: typeof AuthenticatedReceitasRoute
+  AuthenticatedTerceirosRoute: typeof AuthenticatedTerceirosRoute
   AuthenticatedTransacoesRoute: typeof AuthenticatedTransacoesRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
@@ -199,7 +280,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCarteiraRoute: AuthenticatedCarteiraRoute,
   AuthenticatedMinhasDividasRoute: AuthenticatedMinhasDividasRoute,
   AuthenticatedNovaDividaRoute: AuthenticatedNovaDividaRoute,
+  AuthenticatedNovaTerceirosRoute: AuthenticatedNovaTerceirosRoute,
   AuthenticatedNovaTransacaoRoute: AuthenticatedNovaTransacaoRoute,
+  AuthenticatedPerfilRoute: AuthenticatedPerfilRoute,
+  AuthenticatedReceitasRoute: AuthenticatedReceitasRoute,
+  AuthenticatedTerceirosRoute: AuthenticatedTerceirosRoute,
   AuthenticatedTransacoesRoute: AuthenticatedTransacoesRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }

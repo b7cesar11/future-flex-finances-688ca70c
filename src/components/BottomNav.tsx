@@ -1,6 +1,17 @@
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Home, ListChecks, Wallet, ArrowLeftRight, Plus, TrendingDown, TrendingUp, CreditCard, X } from "lucide-react";
+import {
+  Home,
+  ListChecks,
+  Wallet,
+  ArrowLeftRight,
+  Plus,
+  TrendingDown,
+  TrendingUp,
+  CreditCard,
+  X,
+  Users,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const items = [
@@ -19,7 +30,6 @@ export function BottomNav() {
     void navigate({ to: path });
   };
 
-  // Render order: 2 left items, center button, 2 right items
   const left = items.slice(0, 2);
   const right = items.slice(2);
 
@@ -72,14 +82,14 @@ export function BottomNav() {
             <div className="grid gap-3">
               <QuickAction
                 label="Nova Despesa"
-                hint="Um gasto que saiu da sua conta"
+                hint="Um gasto que saiu (ou vai sair) da conta"
                 icon={<TrendingDown className="h-5 w-5" />}
                 tone="bg-destructive/15 text-destructive"
                 onClick={() => go("/nova-transacao?kind=despesa")}
               />
               <QuickAction
                 label="Nova Receita"
-                hint="Dinheiro que entrou"
+                hint="Dinheiro que entrou agora"
                 icon={<TrendingUp className="h-5 w-5" />}
                 tone="bg-primary/15 text-primary"
                 onClick={() => go("/nova-transacao?kind=receita")}
@@ -90,6 +100,13 @@ export function BottomNav() {
                 icon={<CreditCard className="h-5 w-5" />}
                 tone="bg-accent/15 text-accent"
                 onClick={() => go("/nova-divida")}
+              />
+              <QuickAction
+                label="Terceiros"
+                hint="Emprestou, deve ou usaram seu cartão"
+                icon={<Users className="h-5 w-5" />}
+                tone="bg-warning/15 text-warning"
+                onClick={() => go("/nova-terceiros")}
               />
             </div>
           </div>

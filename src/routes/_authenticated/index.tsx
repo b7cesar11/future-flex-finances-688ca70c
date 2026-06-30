@@ -1,7 +1,5 @@
-import { useMemo } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useMemo } from "react";
 import {
   Bar,
   BarChart,
@@ -24,10 +22,20 @@ import {
   AlertCircle,
   Calendar,
   Activity,
+  CalendarClock,
+  Users,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { ProgressBar } from "@/components/ProgressBar";
-import { buildProjection, formatBRL, useFinance } from "@/lib/finance-store";
+import {
+  buildProjection,
+  formatBRL,
+  projectUntilNextIncome,
+  useFinance,
+} from "@/lib/finance-store";
+import { usePeriod } from "@/lib/period-filter";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -44,21 +52,21 @@ function Dashboard() {
     rendaMensal,
     gastosEssenciais,
     dividas,
-    contas,
     transacoes,
     metas,
     investimentos,
+    terceiros,
+    fontesRenda,
+    saldoReal,
   } = useFinance();
+  const { range, isInRange } = usePeriod();
 
   const { data: greetingName } = useQuery({
     queryKey: ["profile", "greeting"],
     queryFn: async () => {
       const { data: userRes } = await supabase.auth.getUser();
       const user = userRes.user;
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("full_name")
-        .maybeSingle();
+      const { data: profile } = await supabase.from("profiles").select("full_name").maybeSingle();
       const full = (profile?.full_name ?? "").trim();
       if (full) return full.split(" ")[0];
       const meta: any = user?.user_metadata ?? {};
@@ -69,42 +77,49 @@ function Dashboard() {
     },
   });
 
-  // ===== Mês atual =====
-  const now = new Date();
-  const monthTx = useMemo(
-    () =>
-      transacoes.filter((t) => {
-        const d = new Date(t.data + "T00:00:00");
-        return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-      }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [transacoes],
+  // ===== Período atual (filtro global) =====
+  const periodTx = useMemo(() => transacoes.filter((t) => isInRange(t.data)), [transacoes, isInRange]);
+
+  const receitas = periodTx.filter((t) => t.kind === "receita").reduce((s, t) => s + t.valor, 0);
+  const despesas = periodTx.filter((t) => t.kind === "despesa").reduce((s, t) => s + t.valor, 0);
+  const lucratividade = receitas > 0 ? Math.round(((receitas - despesas) / receitas) * 100) : 0;
+
+  // ===== Contas a pagar / receber pendentes no período =====
+  const aPagarTotal = periodTx
+    .filter((t) => t.kind === "despesa" && t.status !== "pago")
+    .reduce((s, t) => s + t.valor, 0);
+  const aReceberTotal = periodTx
+    .filter((t) => t.kind === "receita" && t.status !== "pago")
+    .reduce((s, t) => s + t.valor, 0);
+
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const aPagarHoje = transacoes.filter(
+    (t) => t.kind === "despesa" && t.status !== "pago" && t.dueDate === todayIso,
+  ).length;
+  const aReceberHoje = transacoes.filter(
+    (t) => t.kind === "receita" && t.status !== "pago" && t.dueDate === todayIso,
+  ).length;
+
+  // ===== Próxima entrada =====
+  const next = useMemo(
+    () => projectUntilNextIncome(saldoReal, fontesRenda, transacoes, dividas),
+    [saldoReal, fontesRenda, transacoes, dividas],
   );
-
-  const receitasMes = monthTx.filter((t) => t.kind === "receita").reduce((s, t) => s + t.valor, 0);
-  const despesasMes = monthTx.filter((t) => t.kind === "despesa").reduce((s, t) => s + t.valor, 0);
-  const saldoGeral = contas.reduce((s, c) => s + c.saldo, 0);
-  const lucratividade = receitasMes > 0 ? Math.round(((receitasMes - despesasMes) / receitasMes) * 100) : 0;
-
-  // ===== Contas a pagar / receber (placeholders consistentes baseados em dívidas) =====
-  const totalParcelasMes = dividas.reduce((s, d) => s + d.valorParcela, 0);
-  const hoje = now.getDate();
-  const aPagarHoje = dividas.filter((d) => {
-    // placeholder: assume vencimento dia 10 para dívidas ímpares, 20 para pares
-    const dia = d.id.charCodeAt(0) % 28 || 10;
-    return dia === hoje;
-  }).length;
-  const aReceberHoje = 0;
-  const totalAReceber = receitasMes; // placeholder
 
   // ===== Patrimônio =====
   const totalInvestido = investimentos.reduce((s, i) => s + i.valor, 0);
   const aporteSugerido =
     investimentos.reduce((s, i) => s + i.aporteSugerido, 0) ||
-    Math.max(0, Math.round((receitasMes - despesasMes) * 0.2));
+    Math.max(0, Math.round((receitas - despesas) * 0.2));
+
+  // ===== Terceiros pendentes =====
+  const terceirosPendentes = terceiros.filter((t) => t.status !== "pago");
+  const terceirosTotal = terceirosPendentes.reduce((s, t) => s + t.amount, 0);
 
   // ===== Análise estratégica =====
-  const comprometimentoPct = rendaMensal > 0 ? Math.round((totalParcelasMes / rendaMensal) * 100) : 0;
+  const totalParcelasMes = dividas.reduce((s, d) => s + d.valorParcela, 0);
+  const comprometimentoPct =
+    rendaMensal > 0 ? Math.round((totalParcelasMes / rendaMensal) * 100) : 0;
   const tone =
     comprometimentoPct >= 50 ? "destructive" : comprometimentoPct >= 30 ? "warning" : "primary";
   const projection = buildProjection(rendaMensal, gastosEssenciais, dividas, 12);
@@ -112,25 +127,28 @@ function Dashboard() {
   const respiroDelta = respiro ? respiro.ended.reduce((s, d) => s + d.valorParcela, 0) : 0;
 
   return (
-    <AppShell title={greetingName ? `Olá, ${greetingName}` : "Olá"} subtitle="Onde você está, agora.">
+    <AppShell
+      title={greetingName ? `Olá, ${greetingName}` : "Olá"}
+      subtitle={`Visão ${range.kind === "mensal" ? "do mês" : range.kind === "semanal" ? "da semana" : range.kind === "anual" ? "do ano" : "do período"}`}
+    >
       {/* ============= 1. PRIORIDADE MÁXIMA ============= */}
       <section className="grid grid-cols-2 gap-3">
         <KpiCard
           icon={<ArrowUpRight className="h-4 w-4" />}
           label="Receitas"
-          value={formatBRL(receitasMes)}
+          value={formatBRL(receitas)}
           tone="primary"
         />
         <KpiCard
           icon={<ArrowDownRight className="h-4 w-4" />}
           label="Despesas"
-          value={formatBRL(despesasMes)}
+          value={formatBRL(despesas)}
           tone="destructive"
         />
         <KpiCard
           icon={<Wallet className="h-4 w-4" />}
-          label="Saldo geral"
-          value={formatBRL(saldoGeral)}
+          label="Saldo real"
+          value={formatBRL(saldoReal)}
           tone="accent"
         />
         <KpiCard
@@ -144,21 +162,78 @@ function Dashboard() {
       <section className="mt-3 grid grid-cols-1 gap-3">
         <BillBlock
           title="Contas a pagar"
-          total={totalParcelasMes}
+          total={aPagarTotal}
           dueToday={aPagarHoje}
           tone="destructive"
-          to="/minhas-dividas"
+          to="/transacoes"
         />
         <BillBlock
           title="Contas a receber"
-          total={totalAReceber}
+          total={aReceberTotal}
           dueToday={aReceberHoje}
           tone="primary"
           to="/transacoes"
         />
+        {terceirosPendentes.length > 0 && (
+          <Link
+            to="/terceiros"
+            className="flex items-center justify-between rounded-2xl bg-card p-4 shadow-card"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-warning/15 text-warning">
+                <Users className="h-5 w-5" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">Terceiros</p>
+                <p className="text-base font-bold tabular-nums text-warning">
+                  {formatBRL(terceirosTotal)}
+                </p>
+              </div>
+            </div>
+            <span className="shrink-0 rounded-full bg-warning/15 px-2 py-1 text-[10px] font-semibold text-warning">
+              {terceirosPendentes.length} pend.
+            </span>
+          </Link>
+        )}
       </section>
 
-      {/* ============= 2. VISÃO DE RIQUEZA E METAS ============= */}
+      {/* ============= PROJEÇÃO ATÉ A PRÓXIMA ENTRADA ============= */}
+      {next.nextIncome && next.nextDate && (
+        <section className="mt-5 rounded-3xl border border-primary/20 bg-card p-5 shadow-card">
+          <div className="mb-3 flex items-center gap-2">
+            <CalendarClock className="h-4 w-4 text-primary" />
+            <h2 className="text-base font-semibold text-foreground">Até a próxima entrada</h2>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Próxima:{" "}
+            <strong className="text-foreground">{next.nextIncome.name}</strong> em{" "}
+            <strong className="text-foreground">
+              {next.nextDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+            </strong>{" "}
+            ({formatBRL(next.nextIncome.amount)})
+          </p>
+          <div className="mt-3 space-y-2 text-xs">
+            <Row label="Saldo hoje" value={formatBRL(saldoReal)} tone="text-foreground" />
+            <Row label="Contas fixas + dívidas até lá" value={`− ${formatBRL(next.totalDue)}`} tone="text-destructive" />
+            <div className="my-2 h-px bg-border" />
+            <Row
+              label="Sobra prevista"
+              value={formatBRL(next.balanceAfter)}
+              tone={next.balanceAfter >= 0 ? "text-primary font-bold" : "text-destructive font-bold"}
+            />
+          </div>
+          {next.balanceAfter < 0 && (
+            <div className="mt-3 rounded-xl border border-destructive/30 bg-destructive/10 p-2.5">
+              <p className="text-[11px] text-destructive">
+                ⚠️ Faltam <strong>{formatBRL(Math.abs(next.balanceAfter))}</strong> para cobrir o
+                que vence antes do próximo recebimento.
+              </p>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* ============= 2. VISÃO DE RIQUEZA ============= */}
       <section className="mt-5 rounded-3xl bg-card p-5 shadow-card">
         <div className="mb-3 flex items-center gap-2">
           <PiggyBank className="h-4 w-4 text-accent" />
@@ -166,20 +241,19 @@ function Dashboard() {
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-2xl bg-surface-elevated p-3">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Total investido</p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              Total investido
+            </p>
             <p className="mt-1 text-lg font-bold tabular-nums text-foreground">
               {formatBRL(totalInvestido)}
             </p>
-            {investimentos.length === 0 && (
-              <p className="mt-1 text-[10px] text-muted-foreground">Sem investimentos cadastrados</p>
-            )}
           </div>
           <div className="rounded-2xl border border-accent/30 bg-accent/10 p-3">
             <p className="text-[10px] uppercase tracking-wider text-accent">Aporte sugerido</p>
             <p className="mt-1 text-lg font-bold tabular-nums text-accent">
               {formatBRL(aporteSugerido)}
             </p>
-            <p className="mt-1 text-[10px] text-muted-foreground">20% do seu balanço mensal</p>
+            <p className="mt-1 text-[10px] text-muted-foreground">20% do seu balanço</p>
           </div>
         </div>
       </section>
@@ -223,11 +297,13 @@ function Dashboard() {
         )}
       </section>
 
-      {/* ============= 3. VISÃO DE HORIZONTE ============= */}
+      {/* ============= 3. HORIZONTE ============= */}
       <section className="mt-5 rounded-3xl bg-card p-5 shadow-card">
         <div className="mb-1 flex items-center gap-2">
           <Activity className="h-4 w-4 text-warning" />
-          <h2 className="text-base font-semibold text-foreground">Termômetro de comprometimento</h2>
+          <h2 className="text-base font-semibold text-foreground">
+            Termômetro de comprometimento
+          </h2>
         </div>
         <p className="mb-4 text-xs text-muted-foreground">
           Quanto da sua renda já está comprometido com dívidas.
@@ -252,17 +328,37 @@ function Dashboard() {
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={projection} margin={{ top: 8, right: 4, left: -16, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-              <XAxis dataKey="mes" tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
+              <XAxis
+                dataKey="mes"
+                tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={(v) => `${Math.round(v / 1000)}k`}
+              />
               <Tooltip
                 cursor={{ fill: "var(--muted)", opacity: 0.4 }}
-                contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", borderRadius: 12, color: "var(--foreground)", fontSize: 12 }}
+                contentStyle={{
+                  background: "var(--popover)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 12,
+                  color: "var(--foreground)",
+                  fontSize: 12,
+                }}
                 formatter={(v: number) => [formatBRL(v), "Saldo livre"]}
                 labelFormatter={(l) => `Mês: ${l}`}
               />
               <Bar dataKey="saldoLivre" radius={[6, 6, 0, 0]}>
                 {projection.map((entry, i) => (
-                  <Cell key={i} fill={entry.ended.length > 0 ? "var(--primary)" : "var(--accent)"} fillOpacity={entry.ended.length > 0 ? 1 : 0.55} />
+                  <Cell
+                    key={i}
+                    fill={entry.ended.length > 0 ? "var(--primary)" : "var(--accent)"}
+                    fillOpacity={entry.ended.length > 0 ? 1 : 0.55}
+                  />
                 ))}
               </Bar>
             </BarChart>
@@ -273,7 +369,9 @@ function Dashboard() {
           <div className="mt-4 rounded-2xl border border-primary/30 bg-primary/10 p-3">
             <div className="mb-1 flex items-center gap-2 text-primary">
               <Sparkles className="h-3.5 w-3.5" />
-              <span className="text-[11px] font-semibold uppercase tracking-wider">Mês de respiro</span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider">
+                Mês de respiro
+              </span>
             </div>
             <p className="text-xs text-foreground">
               Em <strong className="text-primary">{respiro.mes}</strong> você libera{" "}
@@ -283,6 +381,15 @@ function Dashboard() {
         )}
       </section>
     </AppShell>
+  );
+}
+
+function Row({ label, value, tone }: { label: string; value: string; tone: string }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-muted-foreground">{label}</span>
+      <span className={`tabular-nums ${tone}`}>{value}</span>
+    </div>
   );
 }
 
@@ -298,7 +405,11 @@ function KpiCard({
   tone: "primary" | "destructive" | "accent";
 }) {
   const toneText =
-    tone === "primary" ? "text-primary" : tone === "destructive" ? "text-destructive" : "text-accent";
+    tone === "primary"
+      ? "text-primary"
+      : tone === "destructive"
+        ? "text-destructive"
+        : "text-accent";
   const toneBg =
     tone === "primary"
       ? "bg-primary/15 text-primary"
@@ -309,7 +420,9 @@ function KpiCard({
     <div className="rounded-2xl bg-card p-3 shadow-card">
       <div className="flex items-center justify-between">
         <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>
-        <span className={`flex h-7 w-7 items-center justify-center rounded-lg ${toneBg}`}>{icon}</span>
+        <span className={`flex h-7 w-7 items-center justify-center rounded-lg ${toneBg}`}>
+          {icon}
+        </span>
       </div>
       <p className={`mt-2 text-base font-bold tabular-nums ${toneText}`}>{value}</p>
     </div>
@@ -337,8 +450,14 @@ function BillBlock({
       className="flex items-center justify-between rounded-2xl bg-card p-4 shadow-card transition active:scale-[.98]"
     >
       <div className="flex items-center gap-3 min-w-0">
-        <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${toneBg} ${toneText}`}>
-          {tone === "destructive" ? <AlertCircle className="h-5 w-5" /> : <Calendar className="h-5 w-5" />}
+        <span
+          className={`flex h-10 w-10 items-center justify-center rounded-xl ${toneBg} ${toneText}`}
+        >
+          {tone === "destructive" ? (
+            <AlertCircle className="h-5 w-5" />
+          ) : (
+            <Calendar className="h-5 w-5" />
+          )}
         </span>
         <div className="min-w-0">
           <p className="text-xs text-muted-foreground">{title}</p>
@@ -346,7 +465,9 @@ function BillBlock({
         </div>
       </div>
       {dueToday > 0 && (
-        <span className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold ${toneBg} ${toneText}`}>
+        <span
+          className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold ${toneBg} ${toneText}`}
+        >
           {dueToday} {dueToday === 1 ? "item" : "itens"} hoje
         </span>
       )}

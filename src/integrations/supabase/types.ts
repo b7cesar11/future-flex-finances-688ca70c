@@ -21,6 +21,7 @@ export type Database = {
           created_at: string
           emoji: string
           id: string
+          initial_balance: number
           name: string
           type: Database["public"]["Enums"]["account_type"]
           updated_at: string
@@ -32,6 +33,7 @@ export type Database = {
           created_at?: string
           emoji?: string
           id?: string
+          initial_balance?: number
           name: string
           type?: Database["public"]["Enums"]["account_type"]
           updated_at?: string
@@ -43,6 +45,7 @@ export type Database = {
           created_at?: string
           emoji?: string
           id?: string
+          initial_balance?: number
           name?: string
           type?: Database["public"]["Enums"]["account_type"]
           updated_at?: string
@@ -55,10 +58,13 @@ export type Database = {
           created_at: string
           due_day: number | null
           id: string
+          is_variable: boolean
+          last_paid_month: string | null
           monthly_installment: number
           name: string
           remaining_installments: number
           start_date: string
+          status_this_month: Database["public"]["Enums"]["payment_status"]
           total_amount: number
           total_installments: number
           type: Database["public"]["Enums"]["debt_type"]
@@ -69,10 +75,13 @@ export type Database = {
           created_at?: string
           due_day?: number | null
           id?: string
+          is_variable?: boolean
+          last_paid_month?: string | null
           monthly_installment: number
           name: string
           remaining_installments: number
           start_date?: string
+          status_this_month?: Database["public"]["Enums"]["payment_status"]
           total_amount?: number
           total_installments: number
           type?: Database["public"]["Enums"]["debt_type"]
@@ -83,10 +92,13 @@ export type Database = {
           created_at?: string
           due_day?: number | null
           id?: string
+          is_variable?: boolean
+          last_paid_month?: string | null
           monthly_installment?: number
           name?: string
           remaining_installments?: number
           start_date?: string
+          status_this_month?: Database["public"]["Enums"]["payment_status"]
           total_amount?: number
           total_installments?: number
           type?: Database["public"]["Enums"]["debt_type"]
@@ -94,6 +106,56 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      income_sources: {
+        Row: {
+          account_id: string | null
+          amount: number
+          created_at: string
+          expected_date_label: string | null
+          expected_day: number
+          id: string
+          last_received_month: string | null
+          name: string
+          status: Database["public"]["Enums"]["income_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string
+          expected_date_label?: string | null
+          expected_day?: number
+          id?: string
+          last_received_month?: string | null
+          name: string
+          status?: Database["public"]["Enums"]["income_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string
+          expected_date_label?: string | null
+          expected_day?: number
+          id?: string
+          last_received_month?: string | null
+          name?: string
+          status?: Database["public"]["Enums"]["income_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "income_sources_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       investments: {
         Row: {
@@ -197,6 +259,51 @@ export type Database = {
         }
         Relationships: []
       }
+      third_party_financials: {
+        Row: {
+          amount: number
+          created_at: string
+          due_date: string | null
+          id: string
+          installments_left: number
+          is_installment: boolean
+          notes: string | null
+          person_name: string
+          status: Database["public"]["Enums"]["payment_status"]
+          type: Database["public"]["Enums"]["third_party_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          installments_left?: number
+          is_installment?: boolean
+          notes?: string | null
+          person_name: string
+          status?: Database["public"]["Enums"]["payment_status"]
+          type: Database["public"]["Enums"]["third_party_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          installments_left?: number
+          is_installment?: boolean
+          notes?: string | null
+          person_name?: string
+          status?: Database["public"]["Enums"]["payment_status"]
+          type?: Database["public"]["Enums"]["third_party_type"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           account_id: string | null
@@ -205,7 +312,10 @@ export type Database = {
           created_at: string
           date: string
           description: string
+          due_date: string | null
           id: string
+          is_fixed: boolean
+          status: Database["public"]["Enums"]["payment_status"]
           type: Database["public"]["Enums"]["tx_kind"]
           user_id: string
         }
@@ -216,7 +326,10 @@ export type Database = {
           created_at?: string
           date?: string
           description?: string
+          due_date?: string | null
           id?: string
+          is_fixed?: boolean
+          status?: Database["public"]["Enums"]["payment_status"]
           type: Database["public"]["Enums"]["tx_kind"]
           user_id: string
         }
@@ -227,7 +340,10 @@ export type Database = {
           created_at?: string
           date?: string
           description?: string
+          due_date?: string | null
           id?: string
+          is_fixed?: boolean
+          status?: Database["public"]["Enums"]["payment_status"]
           type?: Database["public"]["Enums"]["tx_kind"]
           user_id?: string
         }
@@ -246,7 +362,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      pay_debt_installment: { Args: { _debt_id: string }; Returns: undefined }
+      wipe_user_data: { Args: never; Returns: undefined }
     }
     Enums: {
       account_type:
@@ -255,6 +372,12 @@ export type Database = {
         | "Dinheiro"
         | "Cartão de Crédito"
       debt_type: "Cartão de Crédito" | "Empréstimo" | "Financiamento"
+      income_status: "recebido" | "pendente"
+      payment_status: "pago" | "pendente" | "atrasado"
+      third_party_type:
+        | "emprestei_dinheiro"
+        | "usou_meu_cartao"
+        | "devo_a_terceiro"
       tx_kind: "receita" | "despesa"
     }
     CompositeTypes: {
@@ -390,6 +513,13 @@ export const Constants = {
         "Cartão de Crédito",
       ],
       debt_type: ["Cartão de Crédito", "Empréstimo", "Financiamento"],
+      income_status: ["recebido", "pendente"],
+      payment_status: ["pago", "pendente", "atrasado"],
+      third_party_type: [
+        "emprestei_dinheiro",
+        "usou_meu_cartao",
+        "devo_a_terceiro",
+      ],
       tx_kind: ["receita", "despesa"],
     },
   },

@@ -468,6 +468,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       parcelasRestantes: r.remaining_installments,
       parcelasTotais: r.total_installments,
       tipo: r.type as DebtType,
+      category: (r.category ?? (r.is_variable ? "variavel" : "parcelada")) as DebtCategory,
       dueDay: r.due_day ?? null,
       isVariable: r.is_variable ?? false,
       statusThisMonth: (r.status_this_month ?? "pendente") as PaymentStatus,

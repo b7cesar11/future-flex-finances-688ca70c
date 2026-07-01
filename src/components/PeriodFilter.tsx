@@ -3,9 +3,9 @@ import { CalendarRange, Check } from "lucide-react";
 import { usePeriod, type PeriodKind } from "@/lib/period-filter";
 
 const OPTIONS: { key: PeriodKind; label: string }[] = [
-  { key: "semanal", label: "Semana" },
-  { key: "mensal", label: "Mês" },
-  { key: "anual", label: "Ano" },
+  { key: "semanal", label: "1 Sem" },
+  { key: "mensal", label: "1 Mês" },
+  { key: "anual", label: "1 Ano" },
   { key: "personalizado", label: "Custom" },
 ];
 

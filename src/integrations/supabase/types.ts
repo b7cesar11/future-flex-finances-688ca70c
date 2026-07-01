@@ -55,6 +55,7 @@ export type Database = {
       }
       debts: {
         Row: {
+          category: Database["public"]["Enums"]["debt_category"]
           created_at: string
           due_day: number | null
           id: string
@@ -72,6 +73,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          category?: Database["public"]["Enums"]["debt_category"]
           created_at?: string
           due_day?: number | null
           id?: string
@@ -89,6 +91,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          category?: Database["public"]["Enums"]["debt_category"]
           created_at?: string
           due_day?: number | null
           id?: string
@@ -363,6 +366,11 @@ export type Database = {
     }
     Functions: {
       pay_debt_installment: { Args: { _debt_id: string }; Returns: undefined }
+      pay_debt_with_amount: {
+        Args: { _amount: number; _debt_id: string }
+        Returns: undefined
+      }
+      revert_debt_payment: { Args: { _debt_id: string }; Returns: undefined }
       wipe_user_data: { Args: never; Returns: undefined }
     }
     Enums: {
@@ -371,6 +379,7 @@ export type Database = {
         | "Poupança"
         | "Dinheiro"
         | "Cartão de Crédito"
+      debt_category: "parcelada" | "variavel" | "fixa" | "congelada"
       debt_type: "Cartão de Crédito" | "Empréstimo" | "Financiamento"
       income_status: "recebido" | "pendente"
       payment_status: "pago" | "pendente" | "atrasado"
@@ -512,6 +521,7 @@ export const Constants = {
         "Dinheiro",
         "Cartão de Crédito",
       ],
+      debt_category: ["parcelada", "variavel", "fixa", "congelada"],
       debt_type: ["Cartão de Crédito", "Empréstimo", "Financiamento"],
       income_status: ["recebido", "pendente"],
       payment_status: ["pago", "pendente", "atrasado"],

@@ -41,10 +41,11 @@ function NovaDivida() {
       await addDebt({
         nome: nome.trim(),
         valorParcela: Number(valor.replace(",", ".")),
-        parcelasRestantes: Number(parcelas),
+        parcelasRestantes: isFixed ? 0 : Number(parcelas),
         tipo,
+        category,
         dueDay: dueDay ? Number(dueDay) : null,
-        isVariable,
+        isVariable: category === "variavel",
       });
       navigate({ to: "/minhas-dividas" });
     } catch (err: any) {

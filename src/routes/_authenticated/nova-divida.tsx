@@ -81,13 +81,14 @@ function NovaDivida() {
               />
             </div>
           </Field>
-          <Field label="Parcelas restantes">
+          <Field label={isFixed ? "Parcelas (n/a)" : "Parcelas restantes"}>
             <input
               inputMode="numeric"
-              value={parcelas}
+              value={isFixed ? "" : parcelas}
+              disabled={isFixed}
               onChange={(e) => setParcelas(e.target.value.replace(/\D/g, ""))}
-              placeholder="12"
-              className="w-full rounded-2xl bg-surface px-4 py-3.5 text-base text-foreground outline-none ring-1 ring-border focus:ring-2 focus:ring-primary"
+              placeholder={isFixed ? "—" : "12"}
+              className="w-full rounded-2xl bg-surface px-4 py-3.5 text-base text-foreground outline-none ring-1 ring-border focus:ring-2 focus:ring-primary disabled:opacity-50"
             />
           </Field>
         </div>

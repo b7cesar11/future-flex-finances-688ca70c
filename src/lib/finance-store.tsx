@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export type DebtType = "Cartão de Crédito" | "Empréstimo" | "Financiamento";
+export type DebtCategory = "parcelada" | "variavel" | "fixa" | "congelada";
 export type PaymentStatus = "pago" | "pendente" | "atrasado";
 export type ThirdPartyType = "emprestei_dinheiro" | "usou_meu_cartao" | "devo_a_terceiro";
 export type IncomeStatus = "recebido" | "pendente";

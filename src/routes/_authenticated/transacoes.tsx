@@ -171,6 +171,7 @@ function Transacoes() {
                           {t.isFixed && (
                             <Pin className="h-3 w-3 shrink-0 text-accent" />
                           )}
+                          <OverdueBadge dueDate={t.dueDate ?? t.data} status={t.status} />
                         </div>
                         <p className="truncate text-[11px] text-muted-foreground">
                           {cat?.nome} · {conta?.nome ?? "—"}

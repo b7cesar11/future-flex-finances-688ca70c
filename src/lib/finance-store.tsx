@@ -455,6 +455,23 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     onSuccess: invalidateAll,
   });
 
+  const updateThirdPartyM = useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: Partial<ThirdParty> }) => {
+      const row: any = {};
+      if (patch.amount !== undefined) row.amount = patch.amount;
+      if (patch.dueDate !== undefined) row.due_date = patch.dueDate;
+      if (patch.personName !== undefined) row.person_name = patch.personName;
+      if (patch.notes !== undefined) row.notes = patch.notes;
+      if (patch.installmentsLeft !== undefined) row.installments_left = patch.installmentsLeft;
+      const { error } = await (supabase as any)
+        .from("third_party_financials")
+        .update(row)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateAll,
+  });
+
   const deleteThirdPartyM = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await (supabase as any).from("third_party_financials").delete().eq("id", id);

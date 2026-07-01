@@ -124,12 +124,15 @@ interface FinanceState {
     valorParcela: number;
     parcelasRestantes: number;
     tipo: DebtType;
+    category?: DebtCategory;
     dueDay?: number | null;
     isVariable?: boolean;
   }) => Promise<void>;
   updateDebtInstallment: (id: string, valorParcela: number) => Promise<void>;
   deleteDebt: (id: string) => Promise<void>;
   payDebtInstallment: (id: string) => Promise<void>;
+  payDebtWithAmount: (id: string, amount: number, accountId?: string | null) => Promise<void>;
+  revertDebtPayment: (id: string) => Promise<void>;
   addTransaction: (tx: {
     kind: TxKind;
     descricao: string;

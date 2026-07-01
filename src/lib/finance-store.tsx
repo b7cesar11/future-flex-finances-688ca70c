@@ -690,6 +690,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     updateDebtInstallmentM,
     deleteDebtM,
     payDebtM,
+    payDebtWithAmountM,
+    revertDebtM,
     addTxM,
     setTxStatusM,
     deleteTxM,

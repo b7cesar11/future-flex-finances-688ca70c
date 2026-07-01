@@ -325,6 +325,55 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     onSuccess: invalidateAll,
   });
 
+  const revertDebtM = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).rpc("revert_debt_payment", { _debt_id: id });
+      if (error) throw error;
+    },
+    onSuccess: invalidateAll,
+  });
+
+  const payDebtWithAmountM = useMutation({
+    mutationFn: async ({
+      id,
+      amount,
+      accountId,
+    }: {
+      id: string;
+      amount: number;
+      accountId?: string | null;
+    }) => {
+      const { data: userRes } = await supabase.auth.getUser();
+      if (!userRes.user) throw new Error("Não autenticado");
+      const { data: debtRow, error: dErr } = await supabase
+        .from("debts")
+        .select("name")
+        .eq("id", id)
+        .maybeSingle();
+      if (dErr) throw dErr;
+      const { error: rpcErr } = await (supabase as any).rpc("pay_debt_with_amount", {
+        _debt_id: id,
+        _amount: amount,
+      });
+      if (rpcErr) throw rpcErr;
+      const today = new Date().toISOString().slice(0, 10);
+      const { error: txErr } = await supabase.from("transactions").insert({
+        user_id: userRes.user.id,
+        account_id: accountId ?? null,
+        amount,
+        type: "despesa",
+        category: "contas",
+        description: `Pagamento — ${debtRow?.name ?? "dívida"}`,
+        date: today,
+        due_date: today,
+        status: "pago",
+        is_fixed: false,
+      } as any);
+      if (txErr) throw txErr;
+    },
+    onSuccess: invalidateAll,
+  });
+
   const addTxM = useMutation({
     mutationFn: async (t: {
       kind: TxKind;

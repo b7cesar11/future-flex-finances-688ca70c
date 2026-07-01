@@ -17,6 +17,7 @@ export interface Debt {
   parcelasRestantes: number;
   parcelasTotais: number;
   tipo: DebtType;
+  category: DebtCategory;
   dueDay: number | null;
   isVariable: boolean;
   statusThisMonth: PaymentStatus;

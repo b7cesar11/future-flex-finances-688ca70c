@@ -3,7 +3,7 @@ import { CreditCard, Landmark, HandCoins, Check } from "lucide-react";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { cn } from "@/lib/utils";
-import { useFinance, type DebtType } from "@/lib/finance-store";
+import { useFinance, type DebtType, type DebtCategory } from "@/lib/finance-store";
 
 export const Route = createFileRoute("/_authenticated/nova-divida")({
   head: () => ({ meta: [{ title: "Nova Dívida" }] }),
@@ -23,12 +23,14 @@ function NovaDivida() {
   const [valor, setValor] = useState("");
   const [parcelas, setParcelas] = useState("");
   const [tipo, setTipo] = useState<DebtType>("Cartão de Crédito");
+  const [category, setCategory] = useState<DebtCategory>("parcelada");
   const [dueDay, setDueDay] = useState("10");
-  const [isVariable, setIsVariable] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const canSubmit = nome.trim() && Number(valor) > 0 && Number(parcelas) > 0;
+  const isFixed = category === "fixa";
+  const canSubmit =
+    nome.trim() && Number(valor) > 0 && (isFixed || Number(parcelas) > 0);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -39,10 +41,11 @@ function NovaDivida() {
       await addDebt({
         nome: nome.trim(),
         valorParcela: Number(valor.replace(",", ".")),
-        parcelasRestantes: Number(parcelas),
+        parcelasRestantes: isFixed ? 0 : Number(parcelas),
         tipo,
+        category,
         dueDay: dueDay ? Number(dueDay) : null,
-        isVariable,
+        isVariable: category === "variavel",
       });
       navigate({ to: "/minhas-dividas" });
     } catch (err: any) {
@@ -78,43 +81,58 @@ function NovaDivida() {
               />
             </div>
           </Field>
-          <Field label="Parcelas restantes">
+          <Field label={isFixed ? "Parcelas (n/a)" : "Parcelas restantes"}>
             <input
               inputMode="numeric"
-              value={parcelas}
+              value={isFixed ? "" : parcelas}
+              disabled={isFixed}
               onChange={(e) => setParcelas(e.target.value.replace(/\D/g, ""))}
-              placeholder="12"
-              className="w-full rounded-2xl bg-surface px-4 py-3.5 text-base text-foreground outline-none ring-1 ring-border focus:ring-2 focus:ring-primary"
+              placeholder={isFixed ? "—" : "12"}
+              className="w-full rounded-2xl bg-surface px-4 py-3.5 text-base text-foreground outline-none ring-1 ring-border focus:ring-2 focus:ring-primary disabled:opacity-50"
             />
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Dia do vencimento">
-            <input
-              inputMode="numeric"
-              value={dueDay}
-              onChange={(e) => setDueDay(e.target.value.replace(/\D/g, "").slice(0, 2))}
-              placeholder="10"
-              className="w-full rounded-2xl bg-surface px-4 py-3.5 text-base text-foreground outline-none ring-1 ring-border focus:ring-2 focus:ring-primary"
-            />
-          </Field>
-          <Field label="Variável?">
-            <button
-              type="button"
-              onClick={() => setIsVariable((v) => !v)}
-              className={cn(
-                "flex w-full items-center justify-between rounded-2xl px-4 py-3.5 text-sm font-semibold transition-all ring-1",
-                isVariable
-                  ? "bg-warning/15 text-warning ring-warning/40"
-                  : "bg-surface text-muted-foreground ring-border",
-              )}
-            >
-              {isVariable ? "Sim" : "Não"}
-              {isVariable && <Check className="h-4 w-4" />}
-            </button>
-          </Field>
-        </div>
+        <Field label="Categoria">
+          <div className="grid grid-cols-2 gap-2">
+            {(
+              [
+                { key: "parcelada", label: "Parcelada" },
+                { key: "variavel", label: "Variável" },
+                { key: "fixa", label: "Fixa" },
+                { key: "congelada", label: "Congelada" },
+              ] as { key: DebtCategory; label: string }[]
+            ).map((c) => {
+              const active = category === c.key;
+              return (
+                <button
+                  key={c.key}
+                  type="button"
+                  onClick={() => setCategory(c.key)}
+                  className={cn(
+                    "rounded-2xl px-3 py-2.5 text-sm font-semibold ring-1 transition-all",
+                    active
+                      ? "bg-primary/15 text-primary ring-primary/40"
+                      : "bg-surface text-muted-foreground ring-border",
+                  )}
+                >
+                  {c.label}
+                </button>
+              );
+            })}
+          </div>
+        </Field>
+
+        <Field label="Dia do vencimento">
+          <input
+            inputMode="numeric"
+            value={dueDay}
+            onChange={(e) => setDueDay(e.target.value.replace(/\D/g, "").slice(0, 2))}
+            placeholder="10"
+            className="w-full rounded-2xl bg-surface px-4 py-3.5 text-base text-foreground outline-none ring-1 ring-border focus:ring-2 focus:ring-primary"
+          />
+        </Field>
+
 
         <Field label="Tipo">
           <div className="flex flex-wrap gap-2">

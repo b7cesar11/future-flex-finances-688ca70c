@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export type DebtType = "Cartão de Crédito" | "Empréstimo" | "Financiamento";
+export type DebtCategory = "parcelada" | "variavel" | "fixa" | "congelada";
 export type PaymentStatus = "pago" | "pendente" | "atrasado";
 export type ThirdPartyType = "emprestei_dinheiro" | "usou_meu_cartao" | "devo_a_terceiro";
 export type IncomeStatus = "recebido" | "pendente";
@@ -16,6 +17,7 @@ export interface Debt {
   parcelasRestantes: number;
   parcelasTotais: number;
   tipo: DebtType;
+  category: DebtCategory;
   dueDay: number | null;
   isVariable: boolean;
   statusThisMonth: PaymentStatus;
@@ -122,12 +124,15 @@ interface FinanceState {
     valorParcela: number;
     parcelasRestantes: number;
     tipo: DebtType;
+    category?: DebtCategory;
     dueDay?: number | null;
     isVariable?: boolean;
   }) => Promise<void>;
   updateDebtInstallment: (id: string, valorParcela: number) => Promise<void>;
   deleteDebt: (id: string) => Promise<void>;
   payDebtInstallment: (id: string) => Promise<void>;
+  payDebtWithAmount: (id: string, amount: number, accountId?: string | null) => Promise<void>;
+  revertDebtPayment: (id: string) => Promise<void>;
   addTransaction: (tx: {
     kind: TxKind;
     descricao: string;
@@ -143,6 +148,7 @@ interface FinanceState {
   deleteTransaction: (id: string) => Promise<void>;
   addThirdParty: (tp: Omit<ThirdParty, "id">) => Promise<void>;
   setThirdPartyStatus: (id: string, status: PaymentStatus) => Promise<void>;
+  updateThirdParty: (id: string, patch: Partial<ThirdParty>) => Promise<void>;
   deleteThirdParty: (id: string) => Promise<void>;
   addIncomeSource: (i: Omit<IncomeSource, "id" | "status" | "lastReceivedMonth"> & {
     status?: IncomeStatus;
@@ -267,12 +273,14 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       valorParcela: number;
       parcelasRestantes: number;
       tipo: DebtType;
+      category?: DebtCategory;
       dueDay?: number | null;
       isVariable?: boolean;
     }) => {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) throw new Error("Não autenticado");
       const total = d.parcelasRestantes;
+      const cat: DebtCategory = d.category ?? (d.isVariable ? "variavel" : "parcelada");
       const { error } = await supabase.from("debts").insert({
         user_id: user.user.id,
         name: d.nome,
@@ -282,7 +290,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         total_installments: total,
         total_amount: d.valorParcela * total,
         due_day: d.dueDay ?? null,
-        is_variable: d.isVariable ?? false,
+        is_variable: cat === "variavel",
+        category: cat,
         status_this_month: "pendente",
       } as any);
       if (error) throw error;
@@ -313,6 +322,55 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     mutationFn: async (id: string) => {
       const { error } = await (supabase as any).rpc("pay_debt_installment", { _debt_id: id });
       if (error) throw error;
+    },
+    onSuccess: invalidateAll,
+  });
+
+  const revertDebtM = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).rpc("revert_debt_payment", { _debt_id: id });
+      if (error) throw error;
+    },
+    onSuccess: invalidateAll,
+  });
+
+  const payDebtWithAmountM = useMutation({
+    mutationFn: async ({
+      id,
+      amount,
+      accountId,
+    }: {
+      id: string;
+      amount: number;
+      accountId?: string | null;
+    }) => {
+      const { data: userRes } = await supabase.auth.getUser();
+      if (!userRes.user) throw new Error("Não autenticado");
+      const { data: debtRow, error: dErr } = await supabase
+        .from("debts")
+        .select("name")
+        .eq("id", id)
+        .maybeSingle();
+      if (dErr) throw dErr;
+      const { error: rpcErr } = await (supabase as any).rpc("pay_debt_with_amount", {
+        _debt_id: id,
+        _amount: amount,
+      });
+      if (rpcErr) throw rpcErr;
+      const today = new Date().toISOString().slice(0, 10);
+      const { error: txErr } = await supabase.from("transactions").insert({
+        user_id: userRes.user.id,
+        account_id: accountId ?? null,
+        amount,
+        type: "despesa",
+        category: "contas",
+        description: `Pagamento — ${debtRow?.name ?? "dívida"}`,
+        date: today,
+        due_date: today,
+        status: "pago",
+        is_fixed: false,
+      } as any);
+      if (txErr) throw txErr;
     },
     onSuccess: invalidateAll,
   });
@@ -398,6 +456,23 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     onSuccess: invalidateAll,
   });
 
+  const updateThirdPartyM = useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: Partial<ThirdParty> }) => {
+      const row: any = {};
+      if (patch.amount !== undefined) row.amount = patch.amount;
+      if (patch.dueDate !== undefined) row.due_date = patch.dueDate;
+      if (patch.personName !== undefined) row.person_name = patch.personName;
+      if (patch.notes !== undefined) row.notes = patch.notes;
+      if (patch.installmentsLeft !== undefined) row.installments_left = patch.installmentsLeft;
+      const { error } = await (supabase as any)
+        .from("third_party_financials")
+        .update(row)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateAll,
+  });
+
   const deleteThirdPartyM = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await (supabase as any).from("third_party_financials").delete().eq("id", id);
@@ -466,6 +541,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       parcelasRestantes: r.remaining_installments,
       parcelasTotais: r.total_installments,
       tipo: r.type as DebtType,
+      category: (r.category ?? (r.is_variable ? "variavel" : "parcelada")) as DebtCategory,
       dueDay: r.due_day ?? null,
       isVariable: r.is_variable ?? false,
       statusThisMonth: (r.status_this_month ?? "pendente") as PaymentStatus,
@@ -577,6 +653,12 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       payDebtInstallment: async (id) => {
         await payDebtM.mutateAsync(id);
       },
+      payDebtWithAmount: async (id, amount, accountId) => {
+        await payDebtWithAmountM.mutateAsync({ id, amount, accountId });
+      },
+      revertDebtPayment: async (id) => {
+        await revertDebtM.mutateAsync(id);
+      },
       addTransaction: async (t) => {
         await addTxM.mutateAsync(t);
       },
@@ -591,6 +673,9 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       },
       setThirdPartyStatus: async (id, status) => {
         await setThirdPartyStatusM.mutateAsync({ id, status });
+      },
+      updateThirdParty: async (id, patch) => {
+        await updateThirdPartyM.mutateAsync({ id, patch });
       },
       deleteThirdParty: async (id) => {
         await deleteThirdPartyM.mutateAsync(id);
@@ -626,11 +711,14 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     updateDebtInstallmentM,
     deleteDebtM,
     payDebtM,
+    payDebtWithAmountM,
+    revertDebtM,
     addTxM,
     setTxStatusM,
     deleteTxM,
     addThirdPartyM,
     setThirdPartyStatusM,
+    updateThirdPartyM,
     deleteThirdPartyM,
     addIncomeM,
     setIncomeStatusM,

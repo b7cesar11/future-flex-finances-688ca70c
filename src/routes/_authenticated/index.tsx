@@ -116,13 +116,14 @@ function Dashboard() {
   const terceirosPendentes = terceiros.filter((t) => t.status !== "pago");
   const terceirosTotal = terceirosPendentes.reduce((s, t) => s + t.amount, 0);
 
-  // ===== Análise estratégica =====
-  const totalParcelasMes = dividas.reduce((s, d) => s + d.valorParcela, 0);
+  // ===== Análise estratégica (ignora dívidas congeladas) =====
+  const dividasAtivas = dividas.filter((d) => d.category !== "congelada");
+  const totalParcelasMes = dividasAtivas.reduce((s, d) => s + d.valorParcela, 0);
   const comprometimentoPct =
     rendaMensal > 0 ? Math.round((totalParcelasMes / rendaMensal) * 100) : 0;
   const tone =
     comprometimentoPct >= 50 ? "destructive" : comprometimentoPct >= 30 ? "warning" : "primary";
-  const projection = buildProjection(rendaMensal, gastosEssenciais, dividas, 12);
+  const projection = buildProjection(rendaMensal, gastosEssenciais, dividasAtivas, 12);
   const respiro = projection.slice(1).find((m) => m.ended.length > 0);
   const respiroDelta = respiro ? respiro.ended.reduce((s, d) => s + d.valorParcela, 0) : 0;
 

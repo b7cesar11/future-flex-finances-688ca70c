@@ -1,34 +1,92 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Users, Plus, Trash2, HandCoins, CreditCard, AlertCircle } from "lucide-react";
+import { Users, Plus, Trash2, Pencil, Check, X } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { PayCheckbox } from "@/components/PayCheckbox";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { formatBRLFull, useFinance, type ThirdPartyType } from "@/lib/finance-store";
+import { OverdueBadge } from "@/components/OverdueBadge";
+import {
+  formatBRLFull,
+  useFinance,
+  type ThirdParty,
+  type ThirdPartyType,
+} from "@/lib/finance-store";
 
 export const Route = createFileRoute("/_authenticated/terceiros")({
   head: () => ({ meta: [{ title: "Terceiros" }] }),
   component: Terceiros,
 });
 
-const META: Record<ThirdPartyType, { label: string; icon: typeof Users; tone: string }> = {
-  emprestei_dinheiro: { label: "Emprestei", icon: HandCoins, tone: "bg-primary/15 text-primary" },
-  usou_meu_cartao: { label: "Usou meu cartão", icon: CreditCard, tone: "bg-accent/15 text-accent" },
-  devo_a_terceiro: { label: "Devo a", icon: AlertCircle, tone: "bg-destructive/15 text-destructive" },
+const TYPE_LABEL: Record<ThirdPartyType, string> = {
+  emprestei_dinheiro: "Emprestei",
+  usou_meu_cartao: "Usou meu cartão",
+  devo_a_terceiro: "Devo",
 };
 
-function Terceiros() {
-  const { terceiros, setThirdPartyStatus, deleteThirdParty } = useFinance();
-  const [confirmDel, setConfirmDel] = useState<string | null>(null);
+// items where "sign" = +1 => vão me pagar; -1 => eu devo
+function signedAmount(t: ThirdParty) {
+  const sign = t.type === "devo_a_terceiro" ? -1 : 1;
+  return sign * (t.status === "pago" ? 0 : t.amount);
+}
 
-  const grouped = (["emprestei_dinheiro", "usou_meu_cartao", "devo_a_terceiro"] as ThirdPartyType[]).map(
-    (t) => ({ type: t, items: terceiros.filter((x) => x.type === t) }),
-  );
+function Terceiros() {
+  const { terceiros, setThirdPartyStatus, updateThirdParty, deleteThirdParty } = useFinance();
+  const [confirmDel, setConfirmDel] = useState<string | null>(null);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [editAmount, setEditAmount] = useState("");
+  const [editDue, setEditDue] = useState("");
+
+  const groups = useMemo(() => {
+    const map = new Map<string, ThirdParty[]>();
+    for (const t of terceiros) {
+      const key = t.personName.trim() || "—";
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(t);
+    }
+    return Array.from(map.entries())
+      .map(([name, items]) => ({
+        name,
+        items: items.sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? "")),
+        subtotal: items.reduce((s, t) => s + signedAmount(t), 0),
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [terceiros]);
+
+  const totalGeral = groups.reduce((s, g) => s + g.subtotal, 0);
+
+  const startEdit = (t: ThirdParty) => {
+    setEditing(t.id);
+    setEditAmount(String(t.amount));
+    setEditDue(t.dueDate ?? "");
+  };
+
+  const saveEdit = async (id: string) => {
+    const v = parseFloat(editAmount.replace(",", "."));
+    await updateThirdParty(id, {
+      amount: v > 0 ? v : undefined,
+      dueDate: editDue || null,
+    });
+    setEditing(null);
+  };
 
   return (
-    <AppShell title="Terceiros" subtitle="Empréstimos, cartão usado e dívidas com pessoas">
+    <AppShell title="Terceiros" subtitle="Empréstimos, cartão emprestado e dívidas com pessoas">
+      {/* Total Geral */}
+      <div className="rounded-3xl bg-gradient-primary p-5 text-primary-foreground shadow-glow">
+        <p className="text-[11px] uppercase tracking-wide opacity-80">Saldo consolidado</p>
+        <p className="mt-1 text-3xl font-bold tabular-nums">
+          {totalGeral >= 0 ? "+" : "−"}
+          {formatBRLFull(Math.abs(totalGeral))}
+        </p>
+        <p className="mt-1 text-[11px] opacity-80">
+          {totalGeral >= 0
+            ? "A receber de terceiros (líquido)"
+            : "A pagar a terceiros (líquido)"}
+        </p>
+      </div>
+
       {terceiros.length === 0 && (
-        <div className="rounded-3xl bg-card p-8 text-center shadow-card">
+        <div className="mt-5 rounded-3xl bg-card p-8 text-center shadow-card">
           <Users className="mx-auto h-8 w-8 text-muted-foreground" />
           <p className="mt-3 text-sm font-semibold text-foreground">Nenhum registro ainda</p>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -43,62 +101,133 @@ function Terceiros() {
         </div>
       )}
 
-      {grouped.map(({ type, items }) =>
-        items.length === 0 ? null : (
-          <section key={type} className="mt-5">
-            <div className="mb-2 flex items-center gap-2">
-              <span className={`flex h-7 w-7 items-center justify-center rounded-lg ${META[type].tone}`}>
-                {(() => {
-                  const I = META[type].icon;
-                  return <I className="h-4 w-4" />;
-                })()}
-              </span>
-              <h2 className="text-sm font-semibold text-foreground">{META[type].label}</h2>
-              <span className="text-[11px] text-muted-foreground">
-                {formatBRLFull(items.reduce((s, x) => s + x.amount, 0))}
-              </span>
+      <div className="mt-5 space-y-4">
+        {groups.map((g) => (
+          <section key={g.name} className="rounded-3xl bg-card p-4 shadow-card ring-1 ring-border/50">
+            <div className="mb-3 flex items-center justify-between">
+              <div className="min-w-0">
+                <p className="truncate text-base font-semibold text-foreground">{g.name}</p>
+                <p className="text-[11px] text-muted-foreground">{g.items.length} lançamento(s)</p>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Subtotal</p>
+                <p
+                  className={`text-base font-bold tabular-nums ${
+                    g.subtotal >= 0 ? "text-success" : "text-destructive"
+                  }`}
+                >
+                  {g.subtotal >= 0 ? "+" : "−"}
+                  {formatBRLFull(Math.abs(g.subtotal))}
+                </p>
+              </div>
             </div>
-            <ul className="overflow-hidden rounded-2xl bg-card shadow-card">
-              {items.map((t, i) => {
+
+            <ul className="space-y-2">
+              {g.items.map((t) => {
                 const pago = t.status === "pago";
+                const isEdit = editing === t.id;
                 return (
                   <li
                     key={t.id}
-                    className={`flex items-center gap-3 px-3 py-3 ${
-                      i < items.length - 1 ? "border-b border-border/60" : ""
-                    } ${!pago ? "bg-warning/5" : ""}`}
+                    className={`rounded-2xl bg-surface-elevated px-3 py-2.5 ${
+                      !pago ? "ring-1 ring-warning/25" : ""
+                    }`}
                   >
-                    <PayCheckbox
-                      paid={pago}
-                      onToggle={() => setThirdPartyStatus(t.id, pago ? "pendente" : "pago")}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-foreground">{t.personName}</p>
-                      <p className="text-[11px] text-muted-foreground">
-                        {t.dueDate
-                          ? `Venc ${new Date(t.dueDate + "T00:00:00").toLocaleDateString("pt-BR")}`
-                          : "Sem vencimento"}
-                        {t.isInstallment ? ` · ${t.installmentsLeft}x restantes` : ""}
-                      </p>
+                    <div className="flex items-center gap-3">
+                      <PayCheckbox
+                        paid={pago}
+                        onToggle={() => setThirdPartyStatus(t.id, pago ? "pendente" : "pago")}
+                        ariaLabel="Alternar pagamento"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <p className="truncate text-sm font-medium text-foreground">
+                            {TYPE_LABEL[t.type]}
+                          </p>
+                          <OverdueBadge dueDate={t.dueDate} status={t.status} />
+                        </div>
+                        {!isEdit && (
+                          <p className="text-[11px] text-muted-foreground">
+                            {t.dueDate
+                              ? `Venc ${new Date(t.dueDate + "T00:00:00").toLocaleDateString("pt-BR")}`
+                              : "Sem vencimento"}
+                            {t.isInstallment ? ` · ${t.installmentsLeft}x restantes` : ""}
+                          </p>
+                        )}
+                        {isEdit && (
+                          <div className="mt-1 grid grid-cols-2 gap-2">
+                            <input
+                              inputMode="decimal"
+                              value={editAmount}
+                              onChange={(e) =>
+                                setEditAmount(e.target.value.replace(/[^\d.,]/g, ""))
+                              }
+                              placeholder="Valor"
+                              className="rounded-lg bg-card px-2 py-1 text-xs outline-none ring-1 ring-primary"
+                            />
+                            <input
+                              type="date"
+                              value={editDue}
+                              onChange={(e) => setEditDue(e.target.value)}
+                              className="rounded-lg bg-card px-2 py-1 text-xs outline-none ring-1 ring-border"
+                            />
+                          </div>
+                        )}
+                      </div>
+                      {!isEdit ? (
+                        <>
+                          <p
+                            className={`text-sm font-semibold tabular-nums ${
+                              !pago ? "" : "opacity-60"
+                            } ${t.type === "devo_a_terceiro" ? "text-destructive" : "text-success"}`}
+                          >
+                            {formatBRLFull(t.amount)}
+                          </p>
+                          <button
+                            type="button"
+                            aria-label="Editar"
+                            onClick={() => startEdit(t)}
+                            className="text-muted-foreground hover:text-foreground"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            aria-label="Excluir"
+                            onClick={() => setConfirmDel(t.id)}
+                            className="text-muted-foreground hover:text-destructive"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            aria-label="Salvar"
+                            onClick={() => saveEdit(t.id)}
+                            className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground"
+                          >
+                            <Check className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            aria-label="Cancelar"
+                            onClick={() => setEditing(null)}
+                            className="flex h-7 w-7 items-center justify-center rounded-lg bg-secondary"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </>
+                      )}
                     </div>
-                    <p className={`text-sm font-semibold tabular-nums ${!pago ? "opacity-70" : ""}`}>
-                      {formatBRLFull(t.amount)}
-                    </p>
-                    <button
-                      type="button"
-                      aria-label="Excluir"
-                      onClick={() => setConfirmDel(t.id)}
-                      className="text-muted-foreground hover:text-destructive"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
                   </li>
                 );
               })}
             </ul>
           </section>
-        ),
-      )}
+        ))}
+      </div>
 
       <Link
         to="/nova-terceiros"

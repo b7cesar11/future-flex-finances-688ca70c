@@ -87,7 +87,9 @@ export function PeriodFilterProvider({ children }: { children: ReactNode }) {
       },
       isInRange: (iso: string) => {
         if (!iso) return false;
-        const d = new Date(iso + "T00:00:00");
+        // Accept "YYYY-MM-DD" as local midnight, or full ISO datetime as-is
+        const d = iso.length <= 10 ? new Date(iso + "T00:00:00") : new Date(iso);
+        if (Number.isNaN(d.getTime())) return false;
         return d >= range.start && d <= range.end;
       },
     }),

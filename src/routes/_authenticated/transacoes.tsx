@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight, Pin, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { PayCheckbox } from "@/components/PayCheckbox";
+import { OverdueBadge } from "@/components/OverdueBadge";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { formatBRLFull, useFinance } from "@/lib/finance-store";
 import { usePeriod } from "@/lib/period-filter";
@@ -170,6 +171,7 @@ function Transacoes() {
                           {t.isFixed && (
                             <Pin className="h-3 w-3 shrink-0 text-accent" />
                           )}
+                          <OverdueBadge dueDate={t.dueDate ?? t.data} status={t.status} />
                         </div>
                         <p className="truncate text-[11px] text-muted-foreground">
                           {cat?.nome} · {conta?.nome ?? "—"}

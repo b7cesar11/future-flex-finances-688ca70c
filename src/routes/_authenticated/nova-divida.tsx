@@ -23,12 +23,14 @@ function NovaDivida() {
   const [valor, setValor] = useState("");
   const [parcelas, setParcelas] = useState("");
   const [tipo, setTipo] = useState<DebtType>("Cartão de Crédito");
+  const [category, setCategory] = useState<DebtCategory>("parcelada");
   const [dueDay, setDueDay] = useState("10");
-  const [isVariable, setIsVariable] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const canSubmit = nome.trim() && Number(valor) > 0 && Number(parcelas) > 0;
+  const isFixed = category === "fixa";
+  const canSubmit =
+    nome.trim() && Number(valor) > 0 && (isFixed || Number(parcelas) > 0);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

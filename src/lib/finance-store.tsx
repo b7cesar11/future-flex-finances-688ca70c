@@ -272,12 +272,14 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       valorParcela: number;
       parcelasRestantes: number;
       tipo: DebtType;
+      category?: DebtCategory;
       dueDay?: number | null;
       isVariable?: boolean;
     }) => {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) throw new Error("Não autenticado");
       const total = d.parcelasRestantes;
+      const cat: DebtCategory = d.category ?? (d.isVariable ? "variavel" : "parcelada");
       const { error } = await supabase.from("debts").insert({
         user_id: user.user.id,
         name: d.nome,
@@ -287,7 +289,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         total_installments: total,
         total_amount: d.valorParcela * total,
         due_day: d.dueDay ?? null,
-        is_variable: d.isVariable ?? false,
+        is_variable: cat === "variavel",
+        category: cat,
         status_this_month: "pendente",
       } as any);
       if (error) throw error;

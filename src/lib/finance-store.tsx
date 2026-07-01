@@ -635,6 +635,12 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       payDebtInstallment: async (id) => {
         await payDebtM.mutateAsync(id);
       },
+      payDebtWithAmount: async (id, amount, accountId) => {
+        await payDebtWithAmountM.mutateAsync({ id, amount, accountId });
+      },
+      revertDebtPayment: async (id) => {
+        await revertDebtM.mutateAsync(id);
+      },
       addTransaction: async (t) => {
         await addTxM.mutateAsync(t);
       },

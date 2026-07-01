@@ -148,6 +148,7 @@ interface FinanceState {
   deleteTransaction: (id: string) => Promise<void>;
   addThirdParty: (tp: Omit<ThirdParty, "id">) => Promise<void>;
   setThirdPartyStatus: (id: string, status: PaymentStatus) => Promise<void>;
+  updateThirdParty: (id: string, patch: Partial<ThirdParty>) => Promise<void>;
   deleteThirdParty: (id: string) => Promise<void>;
   addIncomeSource: (i: Omit<IncomeSource, "id" | "status" | "lastReceivedMonth"> & {
     status?: IncomeStatus;

@@ -3,7 +3,7 @@ import { CreditCard, Landmark, HandCoins, Check } from "lucide-react";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { cn } from "@/lib/utils";
-import { useFinance, type DebtType } from "@/lib/finance-store";
+import { useFinance, type DebtType, type DebtCategory } from "@/lib/finance-store";
 
 export const Route = createFileRoute("/_authenticated/nova-divida")({
   head: () => ({ meta: [{ title: "Nova Dívida" }] }),

@@ -718,6 +718,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     deleteTxM,
     addThirdPartyM,
     setThirdPartyStatusM,
+    updateThirdPartyM,
     deleteThirdPartyM,
     addIncomeM,
     setIncomeStatusM,

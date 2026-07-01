@@ -674,6 +674,9 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       setThirdPartyStatus: async (id, status) => {
         await setThirdPartyStatusM.mutateAsync({ id, status });
       },
+      updateThirdParty: async (id, patch) => {
+        await updateThirdPartyM.mutateAsync({ id, patch });
+      },
       deleteThirdParty: async (id) => {
         await deleteThirdPartyM.mutateAsync(id);
       },

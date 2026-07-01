@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { CreditCard, Landmark, HandCoins, Check } from "lucide-react";
+import { CreditCard, Landmark, HandCoins } from "lucide-react";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { cn } from "@/lib/utils";

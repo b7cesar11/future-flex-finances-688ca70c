@@ -834,9 +834,22 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       deleteIncomeSource: async (id) => {
         await deleteIncomeM.mutateAsync(id);
       },
+      addGoal: async (g) => {
+        await addGoalM.mutateAsync(g);
+      },
+      updateGoal: async (id, patch) => {
+        await updateGoalM.mutateAsync({ id, patch });
+      },
+      deleteGoal: async (id) => {
+        await deleteGoalM.mutateAsync(id);
+      },
+      contributeToGoal: async (id, amount, accountId) => {
+        await contributeGoalM.mutateAsync({ id, amount, accountId });
+      },
       wipeAllData: async () => {
         await wipeM.mutateAsync();
       },
+
     };
   }, [
     profileQ.data,

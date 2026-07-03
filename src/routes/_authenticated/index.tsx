@@ -58,8 +58,12 @@ function Dashboard() {
     terceiros,
     fontesRenda,
     saldoReal,
+    caixinhasTotal,
+    pendentesMesTotal,
+    livreParaGastar,
   } = useFinance();
   const { range, isInRange } = usePeriod();
+
 
   const { data: greetingName } = useQuery({
     queryKey: ["profile", "greeting"],

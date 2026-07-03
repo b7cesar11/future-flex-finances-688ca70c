@@ -161,8 +161,20 @@ interface FinanceState {
   }) => Promise<void>;
   setIncomeStatus: (id: string, status: IncomeStatus) => Promise<void>;
   deleteIncomeSource: (id: string) => Promise<void>;
+  addGoal: (g: {
+    nome: string;
+    emoji?: string;
+    cor?: string;
+    valorTotal: number;
+    aporteMensal?: number;
+    dataAlvo?: string | null;
+  }) => Promise<void>;
+  updateGoal: (id: string, patch: Partial<SavingsGoal>) => Promise<void>;
+  deleteGoal: (id: string) => Promise<void>;
+  contributeToGoal: (id: string, amount: number, accountId?: string | null) => Promise<void>;
   wipeAllData: () => Promise<void>;
 }
+
 
 const FinanceContext = createContext<FinanceState | null>(null);
 

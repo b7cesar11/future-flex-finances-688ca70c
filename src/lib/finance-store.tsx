@@ -119,7 +119,11 @@ interface FinanceState {
   terceiros: ThirdParty[];
   fontesRenda: IncomeSource[];
   saldoReal: number; // global wallet
+  caixinhasTotal: number; // soma dos current_amount das metas
+  pendentesMesTotal: number; // despesas pendentes com dueDate no mês atual
+  livreParaGastar: number; // saldoReal - pendentesMesTotal - caixinhasTotal
   isLoading: boolean;
+
   // mutations
   addDebt: (debt: {
     nome: string;

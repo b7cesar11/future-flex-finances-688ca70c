@@ -193,6 +193,33 @@ export type Database = {
         }
         Relationships: []
       }
+      monthly_budgets: {
+        Row: {
+          created_at: string
+          global_limit_amount: number
+          id: string
+          month_year: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          global_limit_amount?: number
+          id?: string
+          month_year: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          global_limit_amount?: number
+          id?: string
+          month_year?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -230,6 +257,7 @@ export type Database = {
           current_amount: number
           emoji: string
           id: string
+          monthly_contribution: number
           name: string
           target_amount: number
           target_date: string | null
@@ -242,6 +270,7 @@ export type Database = {
           current_amount?: number
           emoji?: string
           id?: string
+          monthly_contribution?: number
           name: string
           target_amount?: number
           target_date?: string | null
@@ -254,6 +283,7 @@ export type Database = {
           current_amount?: number
           emoji?: string
           id?: string
+          monthly_contribution?: number
           name?: string
           target_amount?: number
           target_date?: string | null

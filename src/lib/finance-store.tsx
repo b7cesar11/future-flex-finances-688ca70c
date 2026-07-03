@@ -60,8 +60,10 @@ export interface SavingsGoal {
   cor: string;
   valorAtual: number;
   valorTotal: number;
+  aporteMensal: number;
   dataAlvo: string | null;
 }
+
 
 export interface Investment {
   id: string;

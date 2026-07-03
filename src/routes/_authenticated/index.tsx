@@ -136,11 +136,39 @@ function Dashboard() {
       title={greetingName ? `Olá, ${greetingName}` : "Olá"}
       subtitle={`Visão ${range.kind === "mensal" ? "do mês" : range.kind === "semanal" ? "da semana" : range.kind === "anual" ? "do ano" : "do período"}`}
     >
+      {/* ============= LIVRE PARA GASTAR HOJE ============= */}
+      <section
+        className={`overflow-hidden rounded-3xl p-5 shadow-card ${
+          livreParaGastar < 0
+            ? "bg-destructive text-destructive-foreground"
+            : "bg-gradient-primary text-primary-foreground shadow-glow"
+        }`}
+      >
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold uppercase tracking-wider opacity-85">
+            Livre para gastar hoje
+          </p>
+          <Wallet className="h-5 w-5 opacity-85" />
+        </div>
+        <p className="mt-2 text-3xl font-bold tabular-nums">{formatBRL(livreParaGastar)}</p>
+        <p className="mt-2 text-[11px] opacity-85">
+          Saldo <strong>{formatBRL(saldoReal)}</strong> − pendentes do mês{" "}
+          <strong>{formatBRL(pendentesMesTotal)}</strong> − caixinhas{" "}
+          <strong>{formatBRL(caixinhasTotal)}</strong>
+        </p>
+        {livreParaGastar < 0 && (
+          <p className="mt-2 rounded-xl bg-black/25 px-2.5 py-1.5 text-[11px] font-semibold">
+            ⚠️ Você está comprometido além do saldo. Reveja pendências ou caixinhas.
+          </p>
+        )}
+      </section>
+
       {/* ============= 1. PRIORIDADE MÁXIMA ============= */}
-      <section className="grid grid-cols-2 gap-3">
+      <section className="mt-4 grid grid-cols-2 gap-3">
         <KpiCard
           icon={<ArrowUpRight className="h-4 w-4" />}
           label="Receitas"
+
           value={formatBRL(receitas)}
           tone="primary"
         />

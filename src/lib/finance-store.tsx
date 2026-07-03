@@ -60,8 +60,10 @@ export interface SavingsGoal {
   cor: string;
   valorAtual: number;
   valorTotal: number;
+  aporteMensal: number;
   dataAlvo: string | null;
 }
+
 
 export interface Investment {
   id: string;
@@ -117,7 +119,11 @@ interface FinanceState {
   terceiros: ThirdParty[];
   fontesRenda: IncomeSource[];
   saldoReal: number; // global wallet
+  caixinhasTotal: number; // soma dos current_amount das metas
+  pendentesMesTotal: number; // despesas pendentes com dueDate no mês atual
+  livreParaGastar: number; // saldoReal - pendentesMesTotal - caixinhasTotal
   isLoading: boolean;
+
   // mutations
   addDebt: (debt: {
     nome: string;
@@ -155,8 +161,20 @@ interface FinanceState {
   }) => Promise<void>;
   setIncomeStatus: (id: string, status: IncomeStatus) => Promise<void>;
   deleteIncomeSource: (id: string) => Promise<void>;
+  addGoal: (g: {
+    nome: string;
+    emoji?: string;
+    cor?: string;
+    valorTotal: number;
+    aporteMensal?: number;
+    dataAlvo?: string | null;
+  }) => Promise<void>;
+  updateGoal: (id: string, patch: Partial<SavingsGoal>) => Promise<void>;
+  deleteGoal: (id: string) => Promise<void>;
+  contributeToGoal: (id: string, amount: number, accountId?: string | null) => Promise<void>;
   wipeAllData: () => Promise<void>;
 }
+
 
 const FinanceContext = createContext<FinanceState | null>(null);
 
@@ -523,6 +541,108 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     onSuccess: invalidateAll,
   });
 
+  // ============ Metas / Caixinhas ============
+  const invalidateGoals = () => {
+    qc.invalidateQueries({ queryKey: ["savings_goals"] });
+    qc.invalidateQueries({ queryKey: ["transactions"] });
+    qc.invalidateQueries({ queryKey: ["accounts"] });
+  };
+
+  const addGoalM = useMutation({
+    mutationFn: async (g: {
+      nome: string;
+      emoji?: string;
+      cor?: string;
+      valorTotal: number;
+      aporteMensal?: number;
+      dataAlvo?: string | null;
+    }) => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) throw new Error("Não autenticado");
+      const { error } = await (supabase as any).from("savings_goals").insert({
+        user_id: user.user.id,
+        name: g.nome,
+        emoji: g.emoji ?? "🎯",
+        color: g.cor ?? "bg-primary/20 text-primary",
+        target_amount: g.valorTotal,
+        current_amount: 0,
+        monthly_contribution: g.aporteMensal ?? 0,
+        target_date: g.dataAlvo ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: invalidateGoals,
+  });
+
+  const updateGoalM = useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: Partial<SavingsGoal> }) => {
+      const row: any = {};
+      if (patch.nome !== undefined) row.name = patch.nome;
+      if (patch.emoji !== undefined) row.emoji = patch.emoji;
+      if (patch.cor !== undefined) row.color = patch.cor;
+      if (patch.valorTotal !== undefined) row.target_amount = patch.valorTotal;
+      if (patch.valorAtual !== undefined) row.current_amount = patch.valorAtual;
+      if (patch.aporteMensal !== undefined) row.monthly_contribution = patch.aporteMensal;
+      if (patch.dataAlvo !== undefined) row.target_date = patch.dataAlvo;
+      const { error } = await (supabase as any)
+        .from("savings_goals")
+        .update(row)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateGoals,
+  });
+
+  const deleteGoalM = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).from("savings_goals").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateGoals,
+  });
+
+  const contributeGoalM = useMutation({
+    mutationFn: async ({
+      id,
+      amount,
+      accountId,
+    }: {
+      id: string;
+      amount: number;
+      accountId?: string | null;
+    }) => {
+      const { data: userRes } = await supabase.auth.getUser();
+      if (!userRes.user) throw new Error("Não autenticado");
+      const { data: goal, error: gErr } = await (supabase as any)
+        .from("savings_goals")
+        .select("current_amount, name")
+        .eq("id", id)
+        .maybeSingle();
+      if (gErr) throw gErr;
+      const novo = Number(goal?.current_amount ?? 0) + amount;
+      const { error: upErr } = await (supabase as any)
+        .from("savings_goals")
+        .update({ current_amount: novo })
+        .eq("id", id);
+      if (upErr) throw upErr;
+      const today = new Date().toISOString().slice(0, 10);
+      const { error: txErr } = await supabase.from("transactions").insert({
+        user_id: userRes.user.id,
+        account_id: accountId ?? null,
+        amount,
+        type: "despesa",
+        category: "caixinha",
+        description: `Caixinha — ${goal?.name ?? "meta"}`,
+        date: today,
+        due_date: today,
+        status: "pago",
+        is_fixed: false,
+      } as any);
+      if (txErr) throw txErr;
+    },
+    onSuccess: invalidateGoals,
+  });
+
   const wipeM = useMutation({
     mutationFn: async () => {
       const { error } = await (supabase as any).rpc("wipe_user_data");
@@ -532,6 +652,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       qc.invalidateQueries();
     },
   });
+
 
   const value = useMemo<FinanceState>(() => {
     const dividas: Debt[] = (debtsQ.data ?? []).map((r: any) => ({
@@ -602,8 +723,28 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       cor: r.color,
       valorAtual: Number(r.current_amount),
       valorTotal: Number(r.target_amount),
+      aporteMensal: Number(r.monthly_contribution ?? 0),
       dataAlvo: r.target_date,
     }));
+
+    const caixinhasTotal = metas.reduce((s, m) => s + m.valorAtual, 0);
+
+    // Despesas pendentes com dueDate dentro do mês corrente
+    const now = new Date();
+    const mesInicio = new Date(now.getFullYear(), now.getMonth(), 1);
+    const mesFim = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    const pendentesMesTotal = transacoes
+      .filter((t) => {
+        if (t.kind !== "despesa" || t.status === "pago") return false;
+        const ref = t.dueDate ?? t.data;
+        if (!ref) return false;
+        const d = new Date(ref + "T00:00:00");
+        return d >= mesInicio && d <= mesFim;
+      })
+      .reduce((s, t) => s + t.valor, 0);
+
+    const livreParaGastar = saldoReal - pendentesMesTotal - caixinhasTotal;
+
     const investimentos: Investment[] = (investmentsQ.data ?? []).map((r: any) => ({
       id: r.id,
       nome: r.name,
@@ -635,7 +776,11 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       terceiros,
       fontesRenda,
       saldoReal,
+      caixinhasTotal,
+      pendentesMesTotal,
+      livreParaGastar,
       isLoading:
+
         profileQ.isLoading ||
         accountsQ.isLoading ||
         debtsQ.isLoading ||
@@ -689,9 +834,22 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       deleteIncomeSource: async (id) => {
         await deleteIncomeM.mutateAsync(id);
       },
+      addGoal: async (g) => {
+        await addGoalM.mutateAsync(g);
+      },
+      updateGoal: async (id, patch) => {
+        await updateGoalM.mutateAsync({ id, patch });
+      },
+      deleteGoal: async (id) => {
+        await deleteGoalM.mutateAsync(id);
+      },
+      contributeToGoal: async (id, amount, accountId) => {
+        await contributeGoalM.mutateAsync({ id, amount, accountId });
+      },
       wipeAllData: async () => {
         await wipeM.mutateAsync();
       },
+
     };
   }, [
     profileQ.data,

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { LogOut, Menu, X, Users, CalendarClock, UserCircle2 } from "lucide-react";
+import { LogOut, Menu, X, Users, CalendarClock, UserCircle2, PiggyBank } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -74,9 +74,11 @@ export function AppShell({ title, subtitle, children, hidePeriodFilter }: AppShe
               </button>
             </div>
             <nav className="space-y-1.5">
+              <MenuLink to="/metas" icon={<PiggyBank className="h-4 w-4" />} label="Caixinhas / Metas" onClick={() => setMenu(false)} />
               <MenuLink to="/terceiros" icon={<Users className="h-4 w-4" />} label="Terceiros" onClick={() => setMenu(false)} />
               <MenuLink to="/receitas" icon={<CalendarClock className="h-4 w-4" />} label="Fontes de renda" onClick={() => setMenu(false)} />
               <MenuLink to="/perfil" icon={<UserCircle2 className="h-4 w-4" />} label="Perfil" onClick={() => setMenu(false)} />
+
             </nav>
             <button
               type="button"

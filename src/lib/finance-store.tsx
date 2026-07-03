@@ -723,8 +723,28 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       cor: r.color,
       valorAtual: Number(r.current_amount),
       valorTotal: Number(r.target_amount),
+      aporteMensal: Number(r.monthly_contribution ?? 0),
       dataAlvo: r.target_date,
     }));
+
+    const caixinhasTotal = metas.reduce((s, m) => s + m.valorAtual, 0);
+
+    // Despesas pendentes com dueDate dentro do mês corrente
+    const now = new Date();
+    const mesInicio = new Date(now.getFullYear(), now.getMonth(), 1);
+    const mesFim = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    const pendentesMesTotal = transacoes
+      .filter((t) => {
+        if (t.kind !== "despesa" || t.status === "pago") return false;
+        const ref = t.dueDate ?? t.data;
+        if (!ref) return false;
+        const d = new Date(ref + "T00:00:00");
+        return d >= mesInicio && d <= mesFim;
+      })
+      .reduce((s, t) => s + t.valor, 0);
+
+    const livreParaGastar = saldoReal - pendentesMesTotal - caixinhasTotal;
+
     const investimentos: Investment[] = (investmentsQ.data ?? []).map((r: any) => ({
       id: r.id,
       nome: r.name,

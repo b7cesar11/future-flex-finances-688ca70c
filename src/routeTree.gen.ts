@@ -20,6 +20,7 @@ import { Route as AuthenticatedNovaTransacaoRouteImport } from './routes/_authen
 import { Route as AuthenticatedNovaTerceirosRouteImport } from './routes/_authenticated/nova-terceiros'
 import { Route as AuthenticatedNovaDividaRouteImport } from './routes/_authenticated/nova-divida'
 import { Route as AuthenticatedMinhasDividasRouteImport } from './routes/_authenticated/minhas-dividas'
+import { Route as AuthenticatedMetasRouteImport } from './routes/_authenticated/metas'
 import { Route as AuthenticatedCarteiraRouteImport } from './routes/_authenticated/carteira'
 
 const AuthRoute = AuthRouteImport.update({
@@ -79,6 +80,11 @@ const AuthenticatedMinhasDividasRoute =
     path: '/minhas-dividas',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedMetasRoute = AuthenticatedMetasRouteImport.update({
+  id: '/metas',
+  path: '/metas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCarteiraRoute = AuthenticatedCarteiraRouteImport.update({
   id: '/carteira',
   path: '/carteira',
@@ -89,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
   '/carteira': typeof AuthenticatedCarteiraRoute
+  '/metas': typeof AuthenticatedMetasRoute
   '/minhas-dividas': typeof AuthenticatedMinhasDividasRoute
   '/nova-divida': typeof AuthenticatedNovaDividaRoute
   '/nova-terceiros': typeof AuthenticatedNovaTerceirosRoute
@@ -101,6 +108,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/carteira': typeof AuthenticatedCarteiraRoute
+  '/metas': typeof AuthenticatedMetasRoute
   '/minhas-dividas': typeof AuthenticatedMinhasDividasRoute
   '/nova-divida': typeof AuthenticatedNovaDividaRoute
   '/nova-terceiros': typeof AuthenticatedNovaTerceirosRoute
@@ -116,6 +124,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/carteira': typeof AuthenticatedCarteiraRoute
+  '/_authenticated/metas': typeof AuthenticatedMetasRoute
   '/_authenticated/minhas-dividas': typeof AuthenticatedMinhasDividasRoute
   '/_authenticated/nova-divida': typeof AuthenticatedNovaDividaRoute
   '/_authenticated/nova-terceiros': typeof AuthenticatedNovaTerceirosRoute
@@ -132,6 +141,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/carteira'
+    | '/metas'
     | '/minhas-dividas'
     | '/nova-divida'
     | '/nova-terceiros'
@@ -144,6 +154,7 @@ export interface FileRouteTypes {
   to:
     | '/auth'
     | '/carteira'
+    | '/metas'
     | '/minhas-dividas'
     | '/nova-divida'
     | '/nova-terceiros'
@@ -158,6 +169,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/carteira'
+    | '/_authenticated/metas'
     | '/_authenticated/minhas-dividas'
     | '/_authenticated/nova-divida'
     | '/_authenticated/nova-terceiros'
@@ -253,6 +265,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMinhasDividasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/metas': {
+      id: '/_authenticated/metas'
+      path: '/metas'
+      fullPath: '/metas'
+      preLoaderRoute: typeof AuthenticatedMetasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/carteira': {
       id: '/_authenticated/carteira'
       path: '/carteira'
@@ -265,6 +284,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedCarteiraRoute: typeof AuthenticatedCarteiraRoute
+  AuthenticatedMetasRoute: typeof AuthenticatedMetasRoute
   AuthenticatedMinhasDividasRoute: typeof AuthenticatedMinhasDividasRoute
   AuthenticatedNovaDividaRoute: typeof AuthenticatedNovaDividaRoute
   AuthenticatedNovaTerceirosRoute: typeof AuthenticatedNovaTerceirosRoute
@@ -278,6 +298,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCarteiraRoute: AuthenticatedCarteiraRoute,
+  AuthenticatedMetasRoute: AuthenticatedMetasRoute,
   AuthenticatedMinhasDividasRoute: AuthenticatedMinhasDividasRoute,
   AuthenticatedNovaDividaRoute: AuthenticatedNovaDividaRoute,
   AuthenticatedNovaTerceirosRoute: AuthenticatedNovaTerceirosRoute,

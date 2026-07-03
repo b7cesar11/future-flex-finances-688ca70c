@@ -541,6 +541,108 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     onSuccess: invalidateAll,
   });
 
+  // ============ Metas / Caixinhas ============
+  const invalidateGoals = () => {
+    qc.invalidateQueries({ queryKey: ["savings_goals"] });
+    qc.invalidateQueries({ queryKey: ["transactions"] });
+    qc.invalidateQueries({ queryKey: ["accounts"] });
+  };
+
+  const addGoalM = useMutation({
+    mutationFn: async (g: {
+      nome: string;
+      emoji?: string;
+      cor?: string;
+      valorTotal: number;
+      aporteMensal?: number;
+      dataAlvo?: string | null;
+    }) => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) throw new Error("Não autenticado");
+      const { error } = await (supabase as any).from("savings_goals").insert({
+        user_id: user.user.id,
+        name: g.nome,
+        emoji: g.emoji ?? "🎯",
+        color: g.cor ?? "bg-primary/20 text-primary",
+        target_amount: g.valorTotal,
+        current_amount: 0,
+        monthly_contribution: g.aporteMensal ?? 0,
+        target_date: g.dataAlvo ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: invalidateGoals,
+  });
+
+  const updateGoalM = useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: Partial<SavingsGoal> }) => {
+      const row: any = {};
+      if (patch.nome !== undefined) row.name = patch.nome;
+      if (patch.emoji !== undefined) row.emoji = patch.emoji;
+      if (patch.cor !== undefined) row.color = patch.cor;
+      if (patch.valorTotal !== undefined) row.target_amount = patch.valorTotal;
+      if (patch.valorAtual !== undefined) row.current_amount = patch.valorAtual;
+      if (patch.aporteMensal !== undefined) row.monthly_contribution = patch.aporteMensal;
+      if (patch.dataAlvo !== undefined) row.target_date = patch.dataAlvo;
+      const { error } = await (supabase as any)
+        .from("savings_goals")
+        .update(row)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateGoals,
+  });
+
+  const deleteGoalM = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).from("savings_goals").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateGoals,
+  });
+
+  const contributeGoalM = useMutation({
+    mutationFn: async ({
+      id,
+      amount,
+      accountId,
+    }: {
+      id: string;
+      amount: number;
+      accountId?: string | null;
+    }) => {
+      const { data: userRes } = await supabase.auth.getUser();
+      if (!userRes.user) throw new Error("Não autenticado");
+      const { data: goal, error: gErr } = await (supabase as any)
+        .from("savings_goals")
+        .select("current_amount, name")
+        .eq("id", id)
+        .maybeSingle();
+      if (gErr) throw gErr;
+      const novo = Number(goal?.current_amount ?? 0) + amount;
+      const { error: upErr } = await (supabase as any)
+        .from("savings_goals")
+        .update({ current_amount: novo })
+        .eq("id", id);
+      if (upErr) throw upErr;
+      const today = new Date().toISOString().slice(0, 10);
+      const { error: txErr } = await supabase.from("transactions").insert({
+        user_id: userRes.user.id,
+        account_id: accountId ?? null,
+        amount,
+        type: "despesa",
+        category: "caixinha",
+        description: `Caixinha — ${goal?.name ?? "meta"}`,
+        date: today,
+        due_date: today,
+        status: "pago",
+        is_fixed: false,
+      } as any);
+      if (txErr) throw txErr;
+    },
+    onSuccess: invalidateGoals,
+  });
+
   const wipeM = useMutation({
     mutationFn: async () => {
       const { error } = await (supabase as any).rpc("wipe_user_data");
@@ -550,6 +652,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       qc.invalidateQueries();
     },
   });
+
 
   const value = useMemo<FinanceState>(() => {
     const dividas: Debt[] = (debtsQ.data ?? []).map((r: any) => ({

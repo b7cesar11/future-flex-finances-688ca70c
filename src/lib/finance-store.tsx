@@ -776,7 +776,11 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       terceiros,
       fontesRenda,
       saldoReal,
+      caixinhasTotal,
+      pendentesMesTotal,
+      livreParaGastar,
       isLoading:
+
         profileQ.isLoading ||
         accountsQ.isLoading ||
         debtsQ.isLoading ||

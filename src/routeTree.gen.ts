@@ -17,7 +17,6 @@ import { Route as AuthenticatedTerceirosRouteImport } from './routes/_authentica
 import { Route as AuthenticatedReceitasRouteImport } from './routes/_authenticated/receitas'
 import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
 import { Route as AuthenticatedNovaTransacaoRouteImport } from './routes/_authenticated/nova-transacao'
-import { Route as AuthenticatedNovaTerceirosRouteImport } from './routes/_authenticated/nova-terceiros'
 import { Route as AuthenticatedNovaDividaRouteImport } from './routes/_authenticated/nova-divida'
 import { Route as AuthenticatedMinhasDividasRouteImport } from './routes/_authenticated/minhas-dividas'
 import { Route as AuthenticatedMetasRouteImport } from './routes/_authenticated/metas'
@@ -65,12 +64,6 @@ const AuthenticatedNovaTransacaoRoute =
   AuthenticatedNovaTransacaoRouteImport.update({
     id: '/nova-transacao',
     path: '/nova-transacao',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedNovaTerceirosRoute =
-  AuthenticatedNovaTerceirosRouteImport.update({
-    id: '/nova-terceiros',
-    path: '/nova-terceiros',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedNovaDividaRoute = AuthenticatedNovaDividaRouteImport.update({
@@ -125,7 +118,6 @@ export interface FileRoutesByFullPath {
   '/metas': typeof AuthenticatedMetasRoute
   '/minhas-dividas': typeof AuthenticatedMinhasDividasRoute
   '/nova-divida': typeof AuthenticatedNovaDividaRoute
-  '/nova-terceiros': typeof AuthenticatedNovaTerceirosRoute
   '/nova-transacao': typeof AuthenticatedNovaTransacaoRoute
   '/perfil': typeof AuthenticatedPerfilRoute
   '/receitas': typeof AuthenticatedReceitasRoute
@@ -142,7 +134,6 @@ export interface FileRoutesByTo {
   '/metas': typeof AuthenticatedMetasRoute
   '/minhas-dividas': typeof AuthenticatedMinhasDividasRoute
   '/nova-divida': typeof AuthenticatedNovaDividaRoute
-  '/nova-terceiros': typeof AuthenticatedNovaTerceirosRoute
   '/nova-transacao': typeof AuthenticatedNovaTransacaoRoute
   '/perfil': typeof AuthenticatedPerfilRoute
   '/receitas': typeof AuthenticatedReceitasRoute
@@ -162,7 +153,6 @@ export interface FileRoutesById {
   '/_authenticated/metas': typeof AuthenticatedMetasRoute
   '/_authenticated/minhas-dividas': typeof AuthenticatedMinhasDividasRoute
   '/_authenticated/nova-divida': typeof AuthenticatedNovaDividaRoute
-  '/_authenticated/nova-terceiros': typeof AuthenticatedNovaTerceirosRoute
   '/_authenticated/nova-transacao': typeof AuthenticatedNovaTransacaoRoute
   '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
   '/_authenticated/receitas': typeof AuthenticatedReceitasRoute
@@ -183,7 +173,6 @@ export interface FileRouteTypes {
     | '/metas'
     | '/minhas-dividas'
     | '/nova-divida'
-    | '/nova-terceiros'
     | '/nova-transacao'
     | '/perfil'
     | '/receitas'
@@ -200,7 +189,6 @@ export interface FileRouteTypes {
     | '/metas'
     | '/minhas-dividas'
     | '/nova-divida'
-    | '/nova-terceiros'
     | '/nova-transacao'
     | '/perfil'
     | '/receitas'
@@ -219,7 +207,6 @@ export interface FileRouteTypes {
     | '/_authenticated/metas'
     | '/_authenticated/minhas-dividas'
     | '/_authenticated/nova-divida'
-    | '/_authenticated/nova-terceiros'
     | '/_authenticated/nova-transacao'
     | '/_authenticated/perfil'
     | '/_authenticated/receitas'
@@ -290,13 +277,6 @@ declare module '@tanstack/react-router' {
       path: '/nova-transacao'
       fullPath: '/nova-transacao'
       preLoaderRoute: typeof AuthenticatedNovaTransacaoRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/nova-terceiros': {
-      id: '/_authenticated/nova-terceiros'
-      path: '/nova-terceiros'
-      fullPath: '/nova-terceiros'
-      preLoaderRoute: typeof AuthenticatedNovaTerceirosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/nova-divida': {
@@ -379,7 +359,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMetasRoute: typeof AuthenticatedMetasRoute
   AuthenticatedMinhasDividasRoute: typeof AuthenticatedMinhasDividasRoute
   AuthenticatedNovaDividaRoute: typeof AuthenticatedNovaDividaRoute
-  AuthenticatedNovaTerceirosRoute: typeof AuthenticatedNovaTerceirosRoute
   AuthenticatedNovaTransacaoRoute: typeof AuthenticatedNovaTransacaoRoute
   AuthenticatedPerfilRoute: typeof AuthenticatedPerfilRoute
   AuthenticatedReceitasRoute: typeof AuthenticatedReceitasRoute
@@ -396,7 +375,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMetasRoute: AuthenticatedMetasRoute,
   AuthenticatedMinhasDividasRoute: AuthenticatedMinhasDividasRoute,
   AuthenticatedNovaDividaRoute: AuthenticatedNovaDividaRoute,
-  AuthenticatedNovaTerceirosRoute: AuthenticatedNovaTerceirosRoute,
   AuthenticatedNovaTransacaoRoute: AuthenticatedNovaTransacaoRoute,
   AuthenticatedPerfilRoute: AuthenticatedPerfilRoute,
   AuthenticatedReceitasRoute: AuthenticatedReceitasRoute,

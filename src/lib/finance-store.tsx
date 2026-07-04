@@ -187,11 +187,15 @@ interface FinanceState {
   pessoas: Person[];
   envelopes: Envelope[];
   envelopesCommitted: number; // soma do que ainda está reservado (limit - spent, floored at 0)
+  cartoes: CreditCard[];
+  faturas: CreditCardInvoice[];
+  faturasAbertasTotal: number; // total das faturas aberta/fechada do mês, excluindo itens com person_id
   saldoReal: number; // global wallet
   caixinhasTotal: number; // soma dos current_amount das metas
-  pendentesMesTotal: number; // despesas pendentes com dueDate no mês atual
-  livreParaGastar: number; // saldoReal - pendentesMesTotal - caixinhasTotal - envelopesCommitted
+  pendentesMesTotal: number; // despesas pendentes com dueDate no mês atual (sem itens person_id em cartão)
+  livreParaGastar: number; // fórmula completa (Fase 9)
   isLoading: boolean;
+
 
   // mutations
   addDebt: (debt: {

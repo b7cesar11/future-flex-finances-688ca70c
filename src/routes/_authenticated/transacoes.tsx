@@ -76,6 +76,7 @@ function Transacoes() {
         totalParcelas: number;
         pagas: number;
         restanteValor: number;
+        totalOriginal: number;
         proximaData: string | null;
       }
     >();
@@ -87,11 +88,13 @@ function Transacoes() {
         totalParcelas: t.installmentTotal ?? 0,
         pagas: 0,
         restanteValor: 0,
+        totalOriginal: 0,
         proximaData: null as string | null,
       };
       cur.descricao = t.descricao || cur.descricao;
       if (t.installmentTotal && t.installmentTotal > cur.totalParcelas)
         cur.totalParcelas = t.installmentTotal;
+      cur.totalOriginal += t.valor;
       if (t.status === "pago") {
         cur.pagas += 1;
       } else {
@@ -103,6 +106,7 @@ function Transacoes() {
     }
     return Array.from(map.values()).filter((g) => g.restanteValor > 0);
   }, [transacoes]);
+
 
   const [openGroup, setOpenGroup] = useState<string | null>(null);
 

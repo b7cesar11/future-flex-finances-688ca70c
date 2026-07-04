@@ -117,7 +117,15 @@ export function ParcelasList({
               ) : (
                 <button
                   type="button"
-                  onClick={() => pagarParcela(t.id)}
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    try {
+                      await pagarParcela(t.id);
+                    } catch (err) {
+                      console.error("[ParcelasList] pagarParcela falhou", err);
+                    }
+                  }}
                   className="rounded-lg bg-primary/15 px-2 py-1.5 text-[11px] font-semibold text-primary"
                 >
                   Marcar paga

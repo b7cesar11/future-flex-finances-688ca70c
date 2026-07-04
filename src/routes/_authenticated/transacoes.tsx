@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_authenticated/transacoes")({
 });
 
 function Transacoes() {
-  const { transacoes, categorias, contas, setTransactionStatus, deleteTransaction } = useFinance();
+  const { transacoes, categorias, contas, setTransactionStatus, deleteTransaction, encerrarParcelamento } = useFinance();
   const { range, isInRange } = usePeriod();
   const { label, goToNextMonth, goToPreviousMonth, canGoNext } = useMonthNavigator();
 

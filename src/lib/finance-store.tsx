@@ -310,12 +310,38 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  const peopleQ = useQuery({
+    queryKey: ["people"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("people")
+        .select("*")
+        .order("name", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const envelopesQ = useQuery({
+    queryKey: ["budget_envelopes"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("budget_envelopes")
+        .select("*")
+        .order("name", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: ["transactions"] });
     qc.invalidateQueries({ queryKey: ["debts"] });
     qc.invalidateQueries({ queryKey: ["accounts"] });
     qc.invalidateQueries({ queryKey: ["third_party_financials"] });
     qc.invalidateQueries({ queryKey: ["income_sources"] });
+    qc.invalidateQueries({ queryKey: ["people"] });
+    qc.invalidateQueries({ queryKey: ["budget_envelopes"] });
   };
 
   const addDebtM = useMutation({

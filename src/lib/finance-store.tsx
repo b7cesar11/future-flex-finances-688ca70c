@@ -937,10 +937,125 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       } as any);
       if (error) throw error;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["accounts"] });
-    },
+    onSuccess: () => bust("conta_criada"),
   });
+
+  // ---- Cartões de crédito ----
+  const addCreditCardM = useMutation({
+    mutationFn: async (c: {
+      name: string;
+      closingDay: number;
+      dueDay: number;
+      paymentAccountId?: string | null;
+      creditLimit?: number | null;
+    }) => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) throw new Error("Não autenticado");
+      const { error } = await (supabase as any).from("credit_cards").insert({
+        user_id: user.user.id,
+        name: c.name,
+        closing_day: c.closingDay,
+        due_day: c.dueDay,
+        payment_account_id: c.paymentAccountId ?? null,
+        credit_limit: c.creditLimit ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => bust("cartao_criado"),
+  });
+
+  // ---- Compra parcelada (Fase 3): materializa parcelas via RPC ----
+  const criarCompraParceladaM = useMutation({
+    mutationFn: async (input: {
+      description: string;
+      amountTotal: number;
+      installments: number;
+      firstDueDate: string;
+      category: string;
+      creditCardId?: string | null;
+      accountId?: string | null;
+      personId?: string | null;
+      envelopeId?: string | null;
+    }) => {
+      const { data, error } = await (supabase as any).rpc("criar_compra_parcelada", {
+        _description: input.description,
+        _amount_total: input.amountTotal,
+        _installments: input.installments,
+        _first_due_date: input.firstDueDate,
+        _category: input.category,
+        _credit_card_id: input.creditCardId ?? null,
+        _account_id: input.accountId ?? null,
+        _person_id: input.personId ?? null,
+        _envelope_id: input.envelopeId ?? null,
+      });
+      if (error) throw error;
+      return (data as string) ?? null;
+    },
+    onSuccess: () => bust("compra_parcelada_criada"),
+  });
+
+  // ---- Atomic RPCs (Fase 6/7) ----
+  const pagarParcelaM = useMutation({
+    mutationFn: async (txId: string) => {
+      const { error } = await (supabase as any).rpc("pagar_parcela", { _tx_id: txId });
+      if (error) throw error;
+    },
+    onSuccess: () => bust("parcela_paga"),
+  });
+
+  const estornarParcelaM = useMutation({
+    mutationFn: async (txId: string) => {
+      const { error } = await (supabase as any).rpc("estornar_parcela", { _tx_id: txId });
+      if (error) throw error;
+    },
+    onSuccess: () => bust("parcela_estornada"),
+  });
+
+  const adiantarParcelasM = useMutation({
+    mutationFn: async (txIds: string[]) => {
+      const { error } = await (supabase as any).rpc("adiantar_parcelas", { _tx_ids: txIds });
+      if (error) throw error;
+    },
+    onSuccess: () => bust("parcelas_adiantadas"),
+  });
+
+  const encerrarParcelamentoM = useMutation({
+    mutationFn: async ({
+      groupId,
+      modo,
+      customAmount,
+    }: {
+      groupId: string;
+      modo: "quitar" | "cancelar";
+      customAmount?: number | null;
+    }) => {
+      const { error } = await (supabase as any).rpc("encerrar_parcelamento", {
+        _group_id: groupId,
+        _modo: modo,
+        _custom_amount: customAmount ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => bust("parcelamento_encerrado"),
+  });
+
+  const pagarFaturaM = useMutation({
+    mutationFn: async (invoiceId: string) => {
+      const { error } = await (supabase as any).rpc("pagar_fatura", { _invoice_id: invoiceId });
+      if (error) throw error;
+    },
+    onSuccess: () => bust("fatura_paga"),
+  });
+
+  const estornarFaturaM = useMutation({
+    mutationFn: async (invoiceId: string) => {
+      const { error } = await (supabase as any).rpc("estornar_fatura", { _invoice_id: invoiceId });
+      if (error) throw error;
+    },
+    onSuccess: () => bust("fatura_estornada"),
+  });
+
+
 
 
   const value = useMemo<FinanceState>(() => {

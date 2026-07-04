@@ -426,6 +426,7 @@ export type Database = {
           envelope_id: string | null
           id: string
           is_fixed: boolean
+          person_id: string | null
           status: Database["public"]["Enums"]["payment_status"]
           type: Database["public"]["Enums"]["tx_kind"]
           user_id: string
@@ -441,6 +442,7 @@ export type Database = {
           envelope_id?: string | null
           id?: string
           is_fixed?: boolean
+          person_id?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
           type: Database["public"]["Enums"]["tx_kind"]
           user_id: string
@@ -456,6 +458,7 @@ export type Database = {
           envelope_id?: string | null
           id?: string
           is_fixed?: boolean
+          person_id?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
           type?: Database["public"]["Enums"]["tx_kind"]
           user_id?: string
@@ -473,6 +476,13 @@ export type Database = {
             columns: ["envelope_id"]
             isOneToOne: false
             referencedRelation: "budget_envelopes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
             referencedColumns: ["id"]
           },
         ]

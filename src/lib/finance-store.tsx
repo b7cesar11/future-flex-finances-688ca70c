@@ -52,6 +52,7 @@ export interface Transaction {
   categoriaId: string;
   contaId: string;
   envelopeId: string | null;
+  personId: string | null;
 }
 
 export interface SavingsGoal {
@@ -176,6 +177,7 @@ interface FinanceState {
     categoriaId: string;
     contaId: string;
     envelopeId?: string | null;
+    personId?: string | null;
   }) => Promise<void>;
   setTransactionStatus: (id: string, status: PaymentStatus) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
@@ -464,6 +466,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       categoriaId: string;
       contaId: string;
       envelopeId?: string | null;
+      personId?: string | null;
     }) => {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) throw new Error("Não autenticado");
@@ -479,6 +482,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         status: t.status ?? "pago",
         is_fixed: t.isFixed ?? false,
         envelope_id: t.envelopeId ?? null,
+        person_id: t.personId ?? null,
       } as any);
       if (error) throw error;
     },
@@ -841,6 +845,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       categoriaId: r.category,
       contaId: r.account_id ?? "",
       envelopeId: r.envelope_id ?? null,
+      personId: r.person_id ?? null,
     }));
     const fontesRenda: IncomeSource[] = (incomeQ.data ?? []).map((r: any) => ({
       id: r.id,

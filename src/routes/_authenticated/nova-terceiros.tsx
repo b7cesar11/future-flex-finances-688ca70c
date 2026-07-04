@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { ArrowLeft, UserPlus } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useFinance, type ThirdPartyType } from "@/lib/finance-store";
 
@@ -22,7 +22,6 @@ function NovoTerceiros() {
 
   const [type, setType] = useState<ThirdPartyType>("emprestei_dinheiro");
   const [personId, setPersonId] = useState<string>("");
-  const [personName, setPersonName] = useState("");
   const [amount, setAmount] = useState("");
   const [dueDate, setDueDate] = useState(today);
   const [isInstallment, setIsInstallment] = useState(false);
@@ -33,14 +32,18 @@ function NovoTerceiros() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const nomeFinal = personId ? (pessoas.find((p) => p.id === personId)?.name ?? "") : personName;
-    if (!nomeFinal || !amount || saving) return;
+    const pessoa = pessoas.find((p) => p.id === personId);
+    if (!pessoa) {
+      setError("Selecione uma pessoa do Hub de Contatos");
+      return;
+    }
+    if (!amount || saving) return;
     setSaving(true);
     setError(null);
     try {
       await addThirdParty({
-        personId: personId || null,
-        personName: nomeFinal,
+        personId: pessoa.id,
+        personName: pessoa.name,
         type,
         amount: parseFloat(amount.replace(",", ".")),
         dueDate: dueDate || null,
@@ -89,33 +92,30 @@ function NovoTerceiros() {
           </div>
         </div>
 
-        {pessoas.length > 0 && (
-          <Field label="Pessoa (do Hub de Contatos)">
+        <Field label="Pessoa (do Hub de Contatos)">
+          {pessoas.length > 0 ? (
             <select
               value={personId}
               onChange={(e) => setPersonId(e.target.value)}
               className="w-full rounded-xl bg-surface-elevated px-3 py-2.5 text-sm outline-none"
             >
-              <option value="">— Digitar nome livre —</option>
+              <option value="">— Selecione —</option>
               {pessoas.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
                 </option>
               ))}
             </select>
-          </Field>
-        )}
+          ) : (
+            <Link
+              to="/contatos"
+              className="flex items-center justify-center gap-2 rounded-xl bg-surface-elevated px-3 py-2.5 text-xs font-semibold text-primary"
+            >
+              <UserPlus className="h-3.5 w-3.5" /> Cadastre um contato para lançar
+            </Link>
+          )}
+        </Field>
 
-        {!personId && (
-          <Field label="Nome da pessoa">
-            <input
-              value={personName}
-              onChange={(e) => setPersonName(e.target.value)}
-              placeholder="Ex: Maria"
-              className="w-full rounded-xl bg-surface-elevated px-3 py-2.5 text-sm outline-none"
-            />
-          </Field>
-        )}
 
         <div className="grid grid-cols-2 gap-2">
           <Field label="Valor (R$)">

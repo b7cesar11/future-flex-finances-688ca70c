@@ -274,6 +274,10 @@ function Terceiros() {
           if (confirmDel) await deleteThirdParty(confirmDel);
         }}
       />
+
+      {openGroup && (
+        <ParcelasList groupId={openGroup} onClose={() => setOpenGroup(null)} />
+      )}
     </AppShell>
   );
 }

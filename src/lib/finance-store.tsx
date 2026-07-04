@@ -255,7 +255,29 @@ interface FinanceState {
   deleteEnvelope: (id: string) => Promise<void>;
   addAccount: (a: { nome: string; tipo: AccountType; saldoInicial: number; emoji?: string; cor?: string }) => Promise<void>;
   wipeAllData: () => Promise<void>;
+
+  // ---- Fase 6/7/8: cartões, faturas e atomic RPCs ----
+  addCreditCard: (c: { name: string; closingDay: number; dueDay: number; paymentAccountId?: string | null; creditLimit?: number | null }) => Promise<void>;
+  criarCompraParcelada: (input: {
+    description: string;
+    amountTotal: number;
+    installments: number;
+    firstDueDate: string;
+    category: string;
+    creditCardId?: string | null;
+    accountId?: string | null;
+    personId?: string | null;
+    envelopeId?: string | null;
+  }) => Promise<string | null>;
+  pagarParcela: (txId: string) => Promise<void>;
+  estornarParcela: (txId: string) => Promise<void>;
+  adiantarParcelas: (txIds: string[]) => Promise<void>;
+  encerrarParcelamento: (groupId: string, modo: "quitar" | "cancelar", customAmount?: number | null) => Promise<void>;
+  pagarFatura: (invoiceId: string) => Promise<void>;
+  estornarFatura: (invoiceId: string) => Promise<void>;
 }
+
+
 
 
 const FinanceContext = createContext<FinanceState | null>(null);

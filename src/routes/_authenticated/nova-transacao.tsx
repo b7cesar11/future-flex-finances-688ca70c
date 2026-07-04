@@ -51,6 +51,7 @@ function NovaTransacao() {
         isFixed,
         categoriaId,
         contaId,
+        envelopeId: tipo === "despesa" ? envelopeId || null : null,
       });
       void navigate({ to: "/transacoes" });
     } catch (err: any) {

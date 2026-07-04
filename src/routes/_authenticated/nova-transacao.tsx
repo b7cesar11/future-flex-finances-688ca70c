@@ -177,6 +177,36 @@ function NovaTransacao() {
           </select>
         </Field>
 
+        {tipo === "despesa" && envelopes.length > 0 && (
+          <Field label="Envelope (opcional)">
+            <select
+              value={envelopeId}
+              onChange={(e) => setEnvelopeId(e.target.value)}
+              className="w-full rounded-xl bg-surface-elevated px-3 py-2.5 text-sm outline-none"
+            >
+              <option value="">— Sem envelope —</option>
+              {envelopes.map((env) => (
+                <option key={env.id} value={env.id}>
+                  {env.emoji} {env.name} · resta {formatBRLFull(Math.max(0, env.remaining))}
+                </option>
+              ))}
+            </select>
+            {envelopeId &&
+              (() => {
+                const env = envelopes.find((e) => e.id === envelopeId);
+                const v = parseFloat(valor.replace(",", ".")) || 0;
+                if (!env) return null;
+                const excede = env.currentSpent + v > env.monthlyLimit;
+                if (!excede) return null;
+                return (
+                  <p className="mt-1.5 rounded-xl bg-destructive/10 px-2.5 py-1.5 text-[11px] font-semibold text-destructive">
+                    ⚠️ Limite de {env.name} excedido
+                  </p>
+                );
+              })()}
+          </Field>
+        )}
+
         <label className="flex items-center justify-between rounded-xl bg-surface-elevated px-3 py-2.5">
           <span className="flex items-center gap-2 text-sm">
             <Pin className="h-4 w-4 text-accent" /> Despesa fixa (água, luz, internet…)

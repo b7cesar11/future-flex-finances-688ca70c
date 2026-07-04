@@ -163,7 +163,8 @@ function Terceiros() {
                             {t.dueDate
                               ? `Venc ${new Date(t.dueDate + "T00:00:00").toLocaleDateString("pt-BR")}`
                               : "Sem vencimento"}
-                            {t.isInstallment ? ` · ${t.installmentsLeft}x restantes` : ""}
+                            {t.isInstallment ? ` · ${t.installmentsLeft}x` : ""}
+                            {cartaoNome(t.creditCardId) ? ` · 💳 ${cartaoNome(t.creditCardId)}` : ""}
                           </p>
                         )}
                         {isEdit && (

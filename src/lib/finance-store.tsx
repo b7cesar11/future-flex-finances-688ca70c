@@ -463,6 +463,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       isFixed?: boolean;
       categoriaId: string;
       contaId: string;
+      envelopeId?: string | null;
     }) => {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) throw new Error("Não autenticado");
@@ -477,6 +478,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         due_date: t.dueDate ?? t.data,
         status: t.status ?? "pago",
         is_fixed: t.isFixed ?? false,
+        envelope_id: t.envelopeId ?? null,
       } as any);
       if (error) throw error;
     },

@@ -89,6 +89,69 @@ export type Database = {
         }
         Relationships: []
       }
+      commitment_groups: {
+        Row: {
+          category: string | null
+          created_at: string
+          credit_card_id: string | null
+          description: string
+          first_due_date: string | null
+          id: string
+          installments_total: number | null
+          kind: Database["public"]["Enums"]["commitment_kind"]
+          nome_cartao_terceiro: string | null
+          person_id: string | null
+          total_original: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          credit_card_id?: string | null
+          description: string
+          first_due_date?: string | null
+          id?: string
+          installments_total?: number | null
+          kind: Database["public"]["Enums"]["commitment_kind"]
+          nome_cartao_terceiro?: string | null
+          person_id?: string | null
+          total_original?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          credit_card_id?: string | null
+          description?: string
+          first_due_date?: string | null
+          id?: string
+          installments_total?: number | null
+          kind?: Database["public"]["Enums"]["commitment_kind"]
+          nome_cartao_terceiro?: string | null
+          person_id?: string | null
+          total_original?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commitment_groups_credit_card_id_fkey"
+            columns: ["credit_card_id"]
+            isOneToOne: false
+            referencedRelation: "credit_cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commitment_groups_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       credit_card_invoices: {
         Row: {
           closing_date: string
@@ -538,6 +601,7 @@ export type Database = {
           account_id: string | null
           amount: number
           category: string
+          commitment_group_id: string | null
           created_at: string
           credit_card_id: string | null
           date: string
@@ -562,6 +626,7 @@ export type Database = {
           account_id?: string | null
           amount: number
           category?: string
+          commitment_group_id?: string | null
           created_at?: string
           credit_card_id?: string | null
           date?: string
@@ -586,6 +651,7 @@ export type Database = {
           account_id?: string | null
           amount?: number
           category?: string
+          commitment_group_id?: string | null
           created_at?: string
           credit_card_id?: string | null
           date?: string
@@ -612,6 +678,13 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_commitment_group_id_fkey"
+            columns: ["commitment_group_id"]
+            isOneToOne: false
+            referencedRelation: "commitment_groups"
             referencedColumns: ["id"]
           },
           {
@@ -710,6 +783,11 @@ export type Database = {
         | "Poupança"
         | "Dinheiro"
         | "Cartão de Crédito"
+      commitment_kind:
+        | "parcelamento"
+        | "emprestimo"
+        | "refinanciamento"
+        | "recorrencia"
       debt_category: "parcelada" | "variavel" | "fixa" | "congelada"
       debt_type: "Cartão de Crédito" | "Empréstimo" | "Financiamento"
       income_status: "recebido" | "pendente"
@@ -859,6 +937,12 @@ export const Constants = {
         "Poupança",
         "Dinheiro",
         "Cartão de Crédito",
+      ],
+      commitment_kind: [
+        "parcelamento",
+        "emprestimo",
+        "refinanciamento",
+        "recorrencia",
       ],
       debt_category: ["parcelada", "variavel", "fixa", "congelada"],
       debt_type: ["Cartão de Crédito", "Empréstimo", "Financiamento"],

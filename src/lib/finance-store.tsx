@@ -52,6 +52,7 @@ export interface Transaction {
   categoriaId: string;
   contaId: string;
   envelopeId: string | null;
+  personId: string | null;
 }
 
 export interface SavingsGoal {

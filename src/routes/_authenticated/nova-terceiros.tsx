@@ -2,21 +2,26 @@ import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, UserPlus } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { useFinance, type ThirdPartyType } from "@/lib/finance-store";
+import {
+  useFinance,
+  type ThirdPartyType,
+  type ThirdPartyDirection,
+  type PaymentMethod,
+} from "@/lib/finance-store";
 
 export const Route = createFileRoute("/_authenticated/nova-terceiros")({
   head: () => ({ meta: [{ title: "Novo registro de terceiros" }] }),
   component: NovoTerceiros,
 });
 
-const TIPOS: { key: ThirdPartyType; label: string }[] = [
-  { key: "emprestei_dinheiro", label: "Emprestei dinheiro" },
-  { key: "usou_meu_cartao", label: "Usou meu cartão" },
-  { key: "devo_a_terceiro", label: "Devo a alguém" },
+const TIPOS: { key: ThirdPartyType; label: string; direction: ThirdPartyDirection }[] = [
+  { key: "emprestei_dinheiro", label: "Emprestei dinheiro", direction: "a_receber" },
+  { key: "usou_meu_cartao", label: "Usou meu cartão", direction: "a_receber" },
+  { key: "devo_a_terceiro", label: "Devo a alguém", direction: "a_pagar" },
 ];
 
 function NovoTerceiros() {
-  const { addThirdParty, pessoas } = useFinance();
+  const { addThirdParty, criarCompraParcelada, pessoas, cartoes } = useFinance();
   const navigate = useNavigate();
   const today = new Date().toISOString().slice(0, 10);
 
@@ -26,9 +31,17 @@ function NovoTerceiros() {
   const [dueDate, setDueDate] = useState(today);
   const [isInstallment, setIsInstallment] = useState(false);
   const [installmentsLeft, setInstallmentsLeft] = useState("1");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("sem_transacao");
+  const [creditCardId, setCreditCardId] = useState<string>("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const tipoAtual = TIPOS.find((t) => t.key === type)!;
+  const direction: ThirdPartyDirection =
+    type === "usou_meu_cartao" ? "a_receber" : tipoAtual.direction;
+  const isCartao = paymentMethod === "cartao_credito" || type === "usou_meu_cartao";
+  const cardsAtivos = cartoes.filter((c) => c.active);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,18 +50,50 @@ function NovoTerceiros() {
       setError("Selecione uma pessoa do Hub de Contatos");
       return;
     }
-    if (!amount || saving) return;
+    const valor = parseFloat(amount.replace(",", "."));
+    if (!valor || valor <= 0 || saving) return;
+    if (isCartao && !creditCardId) {
+      setError("Selecione o cartão de crédito");
+      return;
+    }
+    const numInst = isInstallment ? Math.max(1, Number(installmentsLeft) || 1) : 1;
+    const finalPaymentMethod: PaymentMethod = isCartao
+      ? "cartao_credito"
+      : paymentMethod === "conta"
+        ? "conta"
+        : "sem_transacao";
+
     setSaving(true);
     setError(null);
     try {
+      let purchaseGroupId: string | null = null;
+
+      // Cartão: materializa parcelas (via criar_compra_parcelada) e vincula ao invoice/pessoa.
+      // Categoria "terceiros" para distinguir na fatura; o helper cria/attacha o invoice.
+      if (isCartao && creditCardId) {
+        purchaseGroupId = await criarCompraParcelada({
+          description: `Terceiro — ${pessoa.name}${notes ? ` (${notes})` : ""}`,
+          amountTotal: valor,
+          installments: numInst,
+          firstDueDate: dueDate,
+          category: "terceiros",
+          creditCardId,
+          personId: pessoa.id,
+        });
+      }
+
       await addThirdParty({
         personId: pessoa.id,
         personName: pessoa.name,
         type,
-        amount: parseFloat(amount.replace(",", ".")),
+        direction,
+        paymentMethod: finalPaymentMethod,
+        creditCardId: isCartao ? creditCardId : null,
+        purchaseGroupId,
+        amount: valor,
         dueDate: dueDate || null,
         isInstallment,
-        installmentsLeft: isInstallment ? Number(installmentsLeft) : 1,
+        installmentsLeft: numInst,
         status: "pendente",
         notes: notes || null,
       });
@@ -79,7 +124,10 @@ function NovoTerceiros() {
               <button
                 key={t.key}
                 type="button"
-                onClick={() => setType(t.key)}
+                onClick={() => {
+                  setType(t.key);
+                  if (t.key === "usou_meu_cartao") setPaymentMethod("cartao_credito");
+                }}
                 className={`rounded-xl px-3 py-2 text-left text-sm font-semibold ${
                   type === t.key
                     ? "bg-primary text-primary-foreground"
@@ -116,9 +164,58 @@ function NovoTerceiros() {
           )}
         </Field>
 
+        <Field label="Forma de pagamento">
+          <div className="grid grid-cols-3 gap-1.5">
+            {[
+              { key: "sem_transacao" as PaymentMethod, label: "Sem tx" },
+              { key: "conta" as PaymentMethod, label: "Conta" },
+              { key: "cartao_credito" as PaymentMethod, label: "Cartão" },
+            ].map((o) => (
+              <button
+                key={o.key}
+                type="button"
+                onClick={() => setPaymentMethod(o.key)}
+                disabled={type === "usou_meu_cartao" && o.key !== "cartao_credito"}
+                className={`rounded-xl px-2 py-2 text-xs font-semibold ${
+                  paymentMethod === o.key || (type === "usou_meu_cartao" && o.key === "cartao_credito")
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-surface-elevated text-muted-foreground disabled:opacity-40"
+                }`}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+        </Field>
+
+        {isCartao && (
+          <Field label="Cartão">
+            {cardsAtivos.length > 0 ? (
+              <select
+                value={creditCardId}
+                onChange={(e) => setCreditCardId(e.target.value)}
+                className="w-full rounded-xl bg-surface-elevated px-3 py-2.5 text-sm outline-none"
+              >
+                <option value="">— Selecione —</option>
+                {cardsAtivos.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <Link
+                to="/cartoes"
+                className="flex items-center justify-center gap-2 rounded-xl bg-surface-elevated px-3 py-2.5 text-xs font-semibold text-primary"
+              >
+                Cadastre um cartão de crédito
+              </Link>
+            )}
+          </Field>
+        )}
 
         <div className="grid grid-cols-2 gap-2">
-          <Field label="Valor (R$)">
+          <Field label="Valor total (R$)">
             <input
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
@@ -127,7 +224,7 @@ function NovoTerceiros() {
               className="w-full rounded-xl bg-surface-elevated px-3 py-2.5 text-sm tabular-nums outline-none"
             />
           </Field>
-          <Field label="Vencimento">
+          <Field label={isCartao ? "1ª parcela em" : "Vencimento"}>
             <input
               type="date"
               value={dueDate}
@@ -148,7 +245,7 @@ function NovoTerceiros() {
         </label>
 
         {isInstallment && (
-          <Field label="Parcelas restantes">
+          <Field label="Nº de parcelas">
             <input
               inputMode="numeric"
               value={installmentsLeft}

@@ -1259,6 +1259,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       direction: (r.direction ?? "a_receber") as ThirdPartyDirection,
       paymentMethod: (r.payment_method ?? "conta") as PaymentMethod,
       creditCardId: r.credit_card_id ?? null,
+      nomeCartaoTerceiro: r.nome_cartao_terceiro ?? null,
       purchaseGroupId: r.purchase_group_id ?? null,
       amount: Number(r.amount),
       dueDate: r.due_date,

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { LogOut, Menu, X, Users, CalendarClock, UserCircle2, PiggyBank, Package, Contact } from "lucide-react";
+import { LogOut, Menu, X, Users, CalendarClock, UserCircle2, PiggyBank, Package, Contact, CreditCard } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";

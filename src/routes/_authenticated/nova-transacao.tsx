@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { ArrowLeft, Pin } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { useFinance, type TxKind, type PaymentStatus } from "@/lib/finance-store";
+import { useFinance, formatBRLFull, type TxKind, type PaymentStatus } from "@/lib/finance-store";
 
 type Search = { kind?: TxKind };
 
@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_authenticated/nova-transacao")({
 
 function NovaTransacao() {
   const { kind = "despesa" } = useSearch({ from: "/_authenticated/nova-transacao" });
-  const { categorias, contas, addTransaction } = useFinance();
+  const { categorias, contas, envelopes, addTransaction } = useFinance();
   const navigate = useNavigate();
 
   const today = new Date().toISOString().slice(0, 10);
@@ -26,6 +26,7 @@ function NovaTransacao() {
   const [valor, setValor] = useState("");
   const [categoriaId, setCategoriaId] = useState(categorias[0]?.id ?? "");
   const [contaId, setContaId] = useState(contas[0]?.id ?? "");
+  const [envelopeId, setEnvelopeId] = useState<string>("");
   const [data, setData] = useState(today);
   const [dueDate, setDueDate] = useState(today);
   const [status, setStatus] = useState<PaymentStatus>("pago");
@@ -50,6 +51,7 @@ function NovaTransacao() {
         isFixed,
         categoriaId,
         contaId,
+        envelopeId: tipo === "despesa" ? envelopeId || null : null,
       });
       void navigate({ to: "/transacoes" });
     } catch (err: any) {
@@ -174,6 +176,36 @@ function NovaTransacao() {
             ))}
           </select>
         </Field>
+
+        {tipo === "despesa" && envelopes.length > 0 && (
+          <Field label="Envelope (opcional)">
+            <select
+              value={envelopeId}
+              onChange={(e) => setEnvelopeId(e.target.value)}
+              className="w-full rounded-xl bg-surface-elevated px-3 py-2.5 text-sm outline-none"
+            >
+              <option value="">— Sem envelope —</option>
+              {envelopes.map((env) => (
+                <option key={env.id} value={env.id}>
+                  {env.emoji} {env.name} · resta {formatBRLFull(Math.max(0, env.remaining))}
+                </option>
+              ))}
+            </select>
+            {envelopeId &&
+              (() => {
+                const env = envelopes.find((e) => e.id === envelopeId);
+                const v = parseFloat(valor.replace(",", ".")) || 0;
+                if (!env) return null;
+                const excede = env.currentSpent + v > env.monthlyLimit;
+                if (!excede) return null;
+                return (
+                  <p className="mt-1.5 rounded-xl bg-destructive/10 px-2.5 py-1.5 text-[11px] font-semibold text-destructive">
+                    ⚠️ Limite de {env.name} excedido
+                  </p>
+                );
+              })()}
+          </Field>
+        )}
 
         <label className="flex items-center justify-between rounded-xl bg-surface-elevated px-3 py-2.5">
           <span className="flex items-center gap-2 text-sm">

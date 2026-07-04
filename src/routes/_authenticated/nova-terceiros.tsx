@@ -16,11 +16,12 @@ const TIPOS: { key: ThirdPartyType; label: string }[] = [
 ];
 
 function NovoTerceiros() {
-  const { addThirdParty } = useFinance();
+  const { addThirdParty, pessoas } = useFinance();
   const navigate = useNavigate();
   const today = new Date().toISOString().slice(0, 10);
 
   const [type, setType] = useState<ThirdPartyType>("emprestei_dinheiro");
+  const [personId, setPersonId] = useState<string>("");
   const [personName, setPersonName] = useState("");
   const [amount, setAmount] = useState("");
   const [dueDate, setDueDate] = useState(today);
@@ -32,12 +33,14 @@ function NovoTerceiros() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!personName || !amount || saving) return;
+    const nomeFinal = personId ? (pessoas.find((p) => p.id === personId)?.name ?? "") : personName;
+    if (!nomeFinal || !amount || saving) return;
     setSaving(true);
     setError(null);
     try {
       await addThirdParty({
-        personName,
+        personId: personId || null,
+        personName: nomeFinal,
         type,
         amount: parseFloat(amount.replace(",", ".")),
         dueDate: dueDate || null,
@@ -86,14 +89,33 @@ function NovoTerceiros() {
           </div>
         </div>
 
-        <Field label="Nome da pessoa">
-          <input
-            value={personName}
-            onChange={(e) => setPersonName(e.target.value)}
-            placeholder="Ex: Maria"
-            className="w-full rounded-xl bg-surface-elevated px-3 py-2.5 text-sm outline-none"
-          />
-        </Field>
+        {pessoas.length > 0 && (
+          <Field label="Pessoa (do Hub de Contatos)">
+            <select
+              value={personId}
+              onChange={(e) => setPersonId(e.target.value)}
+              className="w-full rounded-xl bg-surface-elevated px-3 py-2.5 text-sm outline-none"
+            >
+              <option value="">— Digitar nome livre —</option>
+              {pessoas.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+        )}
+
+        {!personId && (
+          <Field label="Nome da pessoa">
+            <input
+              value={personName}
+              onChange={(e) => setPersonName(e.target.value)}
+              placeholder="Ex: Maria"
+              className="w-full rounded-xl bg-surface-elevated px-3 py-2.5 text-sm outline-none"
+            />
+          </Field>
+        )}
 
         <div className="grid grid-cols-2 gap-2">
           <Field label="Valor (R$)">

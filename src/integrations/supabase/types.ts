@@ -53,6 +53,39 @@ export type Database = {
         }
         Relationships: []
       }
+      budget_envelopes: {
+        Row: {
+          color: string | null
+          created_at: string
+          emoji: string | null
+          id: string
+          monthly_limit: number
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          emoji?: string | null
+          id?: string
+          monthly_limit?: number
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          emoji?: string | null
+          id?: string
+          monthly_limit?: number
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       debts: {
         Row: {
           category: Database["public"]["Enums"]["debt_category"]
@@ -220,6 +253,39 @@ export type Database = {
         }
         Relationships: []
       }
+      people: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          type: Database["public"]["Enums"]["person_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          type?: Database["public"]["Enums"]["person_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          type?: Database["public"]["Enums"]["person_type"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -301,6 +367,7 @@ export type Database = {
           installments_left: number
           is_installment: boolean
           notes: string | null
+          person_id: string | null
           person_name: string
           status: Database["public"]["Enums"]["payment_status"]
           type: Database["public"]["Enums"]["third_party_type"]
@@ -315,6 +382,7 @@ export type Database = {
           installments_left?: number
           is_installment?: boolean
           notes?: string | null
+          person_id?: string | null
           person_name: string
           status?: Database["public"]["Enums"]["payment_status"]
           type: Database["public"]["Enums"]["third_party_type"]
@@ -329,13 +397,22 @@ export type Database = {
           installments_left?: number
           is_installment?: boolean
           notes?: string | null
+          person_id?: string | null
           person_name?: string
           status?: Database["public"]["Enums"]["payment_status"]
           type?: Database["public"]["Enums"]["third_party_type"]
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "third_party_financials_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       transactions: {
         Row: {
@@ -346,6 +423,7 @@ export type Database = {
           date: string
           description: string
           due_date: string | null
+          envelope_id: string | null
           id: string
           is_fixed: boolean
           status: Database["public"]["Enums"]["payment_status"]
@@ -360,6 +438,7 @@ export type Database = {
           date?: string
           description?: string
           due_date?: string | null
+          envelope_id?: string | null
           id?: string
           is_fixed?: boolean
           status?: Database["public"]["Enums"]["payment_status"]
@@ -374,6 +453,7 @@ export type Database = {
           date?: string
           description?: string
           due_date?: string | null
+          envelope_id?: string | null
           id?: string
           is_fixed?: boolean
           status?: Database["public"]["Enums"]["payment_status"]
@@ -386,6 +466,13 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_envelope_id_fkey"
+            columns: ["envelope_id"]
+            isOneToOne: false
+            referencedRelation: "budget_envelopes"
             referencedColumns: ["id"]
           },
         ]
@@ -413,6 +500,7 @@ export type Database = {
       debt_type: "Cartão de Crédito" | "Empréstimo" | "Financiamento"
       income_status: "recebido" | "pendente"
       payment_status: "pago" | "pendente" | "atrasado"
+      person_type: "contato" | "empresa" | "familia"
       third_party_type:
         | "emprestei_dinheiro"
         | "usou_meu_cartao"
@@ -555,6 +643,7 @@ export const Constants = {
       debt_type: ["Cartão de Crédito", "Empréstimo", "Financiamento"],
       income_status: ["recebido", "pendente"],
       payment_status: ["pago", "pendente", "atrasado"],
+      person_type: ["contato", "empresa", "familia"],
       third_party_type: [
         "emprestei_dinheiro",
         "usou_meu_cartao",

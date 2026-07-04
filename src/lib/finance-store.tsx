@@ -51,6 +51,7 @@ export interface Transaction {
   isFixed: boolean;
   categoriaId: string;
   contaId: string;
+  envelopeId: string | null;
 }
 
 export interface SavingsGoal {
@@ -73,8 +74,30 @@ export interface Investment {
   aporteSugerido: number;
 }
 
+export type PersonType = "contato" | "empresa" | "familia";
+
+export interface Person {
+  id: string;
+  name: string;
+  type: PersonType;
+  avatarUrl: string | null;
+  notes: string | null;
+}
+
+export interface Envelope {
+  id: string;
+  name: string;
+  monthlyLimit: number;
+  emoji: string;
+  cor: string;
+  currentSpent: number; // derivado: soma de tx do mês
+  remaining: number; // monthlyLimit - currentSpent
+  committed: number; // max(0, remaining) — o que ainda está reservado
+}
+
 export interface ThirdParty {
   id: string;
+  personId: string | null;
   personName: string;
   type: ThirdPartyType;
   amount: number;
@@ -118,10 +141,13 @@ interface FinanceState {
   investimentos: Investment[];
   terceiros: ThirdParty[];
   fontesRenda: IncomeSource[];
+  pessoas: Person[];
+  envelopes: Envelope[];
+  envelopesCommitted: number; // soma do que ainda está reservado (limit - spent, floored at 0)
   saldoReal: number; // global wallet
   caixinhasTotal: number; // soma dos current_amount das metas
   pendentesMesTotal: number; // despesas pendentes com dueDate no mês atual
-  livreParaGastar: number; // saldoReal - pendentesMesTotal - caixinhasTotal
+  livreParaGastar: number; // saldoReal - pendentesMesTotal - caixinhasTotal - envelopesCommitted
   isLoading: boolean;
 
   // mutations
@@ -149,6 +175,7 @@ interface FinanceState {
     isFixed?: boolean;
     categoriaId: string;
     contaId: string;
+    envelopeId?: string | null;
   }) => Promise<void>;
   setTransactionStatus: (id: string, status: PaymentStatus) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
@@ -172,6 +199,12 @@ interface FinanceState {
   updateGoal: (id: string, patch: Partial<SavingsGoal>) => Promise<void>;
   deleteGoal: (id: string) => Promise<void>;
   contributeToGoal: (id: string, amount: number, accountId?: string | null) => Promise<void>;
+  addPerson: (p: { name: string; type?: PersonType; avatarUrl?: string | null; notes?: string | null }) => Promise<void>;
+  updatePerson: (id: string, patch: Partial<Person>) => Promise<void>;
+  deletePerson: (id: string) => Promise<void>;
+  addEnvelope: (e: { name: string; monthlyLimit: number; emoji?: string; cor?: string }) => Promise<void>;
+  updateEnvelope: (id: string, patch: Partial<Envelope>) => Promise<void>;
+  deleteEnvelope: (id: string) => Promise<void>;
   wipeAllData: () => Promise<void>;
 }
 
@@ -277,12 +310,38 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  const peopleQ = useQuery({
+    queryKey: ["people"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("people")
+        .select("*")
+        .order("name", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const envelopesQ = useQuery({
+    queryKey: ["budget_envelopes"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("budget_envelopes")
+        .select("*")
+        .order("name", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: ["transactions"] });
     qc.invalidateQueries({ queryKey: ["debts"] });
     qc.invalidateQueries({ queryKey: ["accounts"] });
     qc.invalidateQueries({ queryKey: ["third_party_financials"] });
     qc.invalidateQueries({ queryKey: ["income_sources"] });
+    qc.invalidateQueries({ queryKey: ["people"] });
+    qc.invalidateQueries({ queryKey: ["budget_envelopes"] });
   };
 
   const addDebtM = useMutation({
@@ -404,6 +463,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       isFixed?: boolean;
       categoriaId: string;
       contaId: string;
+      envelopeId?: string | null;
     }) => {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) throw new Error("Não autenticado");
@@ -418,6 +478,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         due_date: t.dueDate ?? t.data,
         status: t.status ?? "pago",
         is_fixed: t.isFixed ?? false,
+        envelope_id: t.envelopeId ?? null,
       } as any);
       if (error) throw error;
     },
@@ -449,6 +510,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       if (!user.user) throw new Error("Não autenticado");
       const { error } = await (supabase as any).from("third_party_financials").insert({
         user_id: user.user.id,
+        person_id: t.personId ?? null,
         person_name: t.personName,
         type: t.type,
         amount: t.amount,
@@ -480,6 +542,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       if (patch.amount !== undefined) row.amount = patch.amount;
       if (patch.dueDate !== undefined) row.due_date = patch.dueDate;
       if (patch.personName !== undefined) row.person_name = patch.personName;
+      if (patch.personId !== undefined) row.person_id = patch.personId;
       if (patch.notes !== undefined) row.notes = patch.notes;
       if (patch.installmentsLeft !== undefined) row.installments_left = patch.installmentsLeft;
       const { error } = await (supabase as any)
@@ -643,6 +706,105 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     onSuccess: invalidateGoals,
   });
 
+  // ============ People ============
+  const invalidatePeople = () => {
+    qc.invalidateQueries({ queryKey: ["people"] });
+    qc.invalidateQueries({ queryKey: ["third_party_financials"] });
+  };
+
+  const addPersonM = useMutation({
+    mutationFn: async (p: {
+      name: string;
+      type?: PersonType;
+      avatarUrl?: string | null;
+      notes?: string | null;
+    }) => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) throw new Error("Não autenticado");
+      const { error } = await (supabase as any).from("people").insert({
+        user_id: user.user.id,
+        name: p.name,
+        type: p.type ?? "contato",
+        avatar_url: p.avatarUrl ?? null,
+        notes: p.notes ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: invalidatePeople,
+  });
+
+  const updatePersonM = useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: Partial<Person> }) => {
+      const row: any = {};
+      if (patch.name !== undefined) row.name = patch.name;
+      if (patch.type !== undefined) row.type = patch.type;
+      if (patch.avatarUrl !== undefined) row.avatar_url = patch.avatarUrl;
+      if (patch.notes !== undefined) row.notes = patch.notes;
+      const { error } = await (supabase as any).from("people").update(row).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: invalidatePeople,
+  });
+
+  const deletePersonM = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).from("people").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: invalidatePeople,
+  });
+
+  // ============ Envelopes ============
+  const invalidateEnvelopes = () => {
+    qc.invalidateQueries({ queryKey: ["budget_envelopes"] });
+    qc.invalidateQueries({ queryKey: ["transactions"] });
+  };
+
+  const addEnvelopeM = useMutation({
+    mutationFn: async (e: {
+      name: string;
+      monthlyLimit: number;
+      emoji?: string;
+      cor?: string;
+    }) => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) throw new Error("Não autenticado");
+      const { error } = await (supabase as any).from("budget_envelopes").insert({
+        user_id: user.user.id,
+        name: e.name,
+        monthly_limit: e.monthlyLimit,
+        emoji: e.emoji ?? "📦",
+        color: e.cor ?? "bg-primary/20 text-primary",
+      });
+      if (error) throw error;
+    },
+    onSuccess: invalidateEnvelopes,
+  });
+
+  const updateEnvelopeM = useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: Partial<Envelope> }) => {
+      const row: any = {};
+      if (patch.name !== undefined) row.name = patch.name;
+      if (patch.monthlyLimit !== undefined) row.monthly_limit = patch.monthlyLimit;
+      if (patch.emoji !== undefined) row.emoji = patch.emoji;
+      if (patch.cor !== undefined) row.color = patch.cor;
+      const { error } = await (supabase as any)
+        .from("budget_envelopes")
+        .update(row)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateEnvelopes,
+  });
+
+  const deleteEnvelopeM = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).from("budget_envelopes").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateEnvelopes,
+  });
+
   const wipeM = useMutation({
     mutationFn: async () => {
       const { error } = await (supabase as any).rpc("wipe_user_data");
@@ -678,6 +840,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       isFixed: r.is_fixed ?? false,
       categoriaId: r.category,
       contaId: r.account_id ?? "",
+      envelopeId: r.envelope_id ?? null,
     }));
     const fontesRenda: IncomeSource[] = (incomeQ.data ?? []).map((r: any) => ({
       id: r.id,
@@ -743,8 +906,6 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       })
       .reduce((s, t) => s + t.valor, 0);
 
-    const livreParaGastar = saldoReal - pendentesMesTotal - caixinhasTotal;
-
     const investimentos: Investment[] = (investmentsQ.data ?? []).map((r: any) => ({
       id: r.id,
       nome: r.name,
@@ -752,9 +913,23 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       valor: Number(r.amount),
       aporteSugerido: Number(r.suggested_contribution),
     }));
+
+    const pessoasById = new Map<string, string>();
+    const pessoas: Person[] = (peopleQ.data ?? []).map((r: any) => {
+      pessoasById.set(r.id, r.name);
+      return {
+        id: r.id,
+        name: r.name,
+        type: r.type as PersonType,
+        avatarUrl: r.avatar_url ?? null,
+        notes: r.notes ?? null,
+      };
+    });
+
     const terceiros: ThirdParty[] = (thirdPartyQ.data ?? []).map((r: any) => ({
       id: r.id,
-      personName: r.person_name,
+      personId: r.person_id ?? null,
+      personName: r.person_id ? (pessoasById.get(r.person_id) ?? r.person_name) : r.person_name,
       type: r.type as ThirdPartyType,
       amount: Number(r.amount),
       dueDate: r.due_date,
@@ -763,6 +938,35 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       status: r.status as PaymentStatus,
       notes: r.notes,
     }));
+
+    // ===== Envelopes com spent do mês corrente =====
+    const envelopes: Envelope[] = (envelopesQ.data ?? []).map((r: any) => {
+      const monthlyLimit = Number(r.monthly_limit ?? 0);
+      const currentSpent = transacoes
+        .filter((t) => {
+          if (t.envelopeId !== r.id) return false;
+          if (t.kind !== "despesa" || t.status !== "pago") return false;
+          const ref = t.data ?? t.dueDate;
+          if (!ref) return false;
+          const d = new Date(ref + "T00:00:00");
+          return d >= mesInicio && d <= mesFim;
+        })
+        .reduce((s, t) => s + t.valor, 0);
+      const remaining = monthlyLimit - currentSpent;
+      return {
+        id: r.id,
+        name: r.name,
+        monthlyLimit,
+        emoji: r.emoji ?? "📦",
+        cor: r.color ?? "bg-primary/20 text-primary",
+        currentSpent,
+        remaining,
+        committed: Math.max(0, remaining),
+      };
+    });
+
+    const envelopesCommitted = envelopes.reduce((s, e) => s + e.committed, 0);
+    const livreParaGastarAdj = saldoReal - pendentesMesTotal - caixinhasTotal - envelopesCommitted;
 
     return {
       rendaMensal: Number(profileQ.data?.monthly_income ?? 0),
@@ -775,10 +979,13 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       investimentos,
       terceiros,
       fontesRenda,
+      pessoas,
+      envelopes,
+      envelopesCommitted,
       saldoReal,
       caixinhasTotal,
       pendentesMesTotal,
-      livreParaGastar,
+      livreParaGastar: livreParaGastarAdj,
       isLoading:
 
         profileQ.isLoading ||
@@ -845,6 +1052,24 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       },
       contributeToGoal: async (id, amount, accountId) => {
         await contributeGoalM.mutateAsync({ id, amount, accountId });
+      },
+      addPerson: async (p) => {
+        await addPersonM.mutateAsync(p);
+      },
+      updatePerson: async (id, patch) => {
+        await updatePersonM.mutateAsync({ id, patch });
+      },
+      deletePerson: async (id) => {
+        await deletePersonM.mutateAsync(id);
+      },
+      addEnvelope: async (e) => {
+        await addEnvelopeM.mutateAsync(e);
+      },
+      updateEnvelope: async (id, patch) => {
+        await updateEnvelopeM.mutateAsync({ id, patch });
+      },
+      deleteEnvelope: async (id) => {
+        await deleteEnvelopeM.mutateAsync(id);
       },
       wipeAllData: async () => {
         await wipeM.mutateAsync();

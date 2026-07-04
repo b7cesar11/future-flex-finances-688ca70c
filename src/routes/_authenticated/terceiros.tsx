@@ -95,7 +95,8 @@ function Terceiros() {
             Cadastre quem te deve ou para quem você deve.
           </p>
           <Link
-            to="/nova-terceiros"
+            to="/nova-transacao"
+            search={{ kind: "despesa", terceiro: true }}
             className="mt-4 inline-flex items-center gap-2 rounded-full bg-gradient-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
           >
             <Plus className="h-4 w-4" /> Adicionar

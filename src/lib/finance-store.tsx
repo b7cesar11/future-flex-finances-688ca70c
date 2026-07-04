@@ -1149,19 +1149,70 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
 
     const caixinhasTotal = metas.reduce((s, m) => s + m.valorAtual, 0);
 
-    // Despesas pendentes com dueDate dentro do mês corrente
+    // ===== Cartões e faturas =====
+    const cartoes: CreditCard[] = (creditCardsQ.data ?? []).map((r: any) => ({
+      id: r.id,
+      name: r.name,
+      closingDay: r.closing_day,
+      dueDay: r.due_day,
+      paymentAccountId: r.payment_account_id ?? null,
+      creditLimit: r.credit_limit != null ? Number(r.credit_limit) : null,
+      active: r.active ?? true,
+    }));
+
+    const faturas: CreditCardInvoice[] = (invoicesQ.data ?? []).map((r: any) => {
+      const total = transacoes
+        .filter((t) => t.invoiceId === r.id)
+        .reduce((s, t) => s + t.valor, 0);
+      return {
+        id: r.id,
+        creditCardId: r.credit_card_id,
+        referenceMonth: r.reference_month,
+        closingDate: r.closing_date,
+        dueDate: r.due_date,
+        status: r.status as InvoiceStatus,
+        paidAt: r.paid_at ?? null,
+        total,
+      };
+    });
+
+    // ===== Fase 9: Fórmula "Livre para gastar" =====
+    // saldoReal
+    //   − parcelas/despesas a_pagar do mês (sem passar por fatura, sem person_id em cartão)
+    //   − total das faturas aberta/fechada do mês (excluindo itens com person_id — terceiros reembolsam)
+    //   − caixinhas
+    //   − envelopes committed
+    // direction=a_receber nunca entra em nada disso (third_party_financials não vira transação).
     const now = new Date();
     const mesInicio = new Date(now.getFullYear(), now.getMonth(), 1);
     const mesFim = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
     const pendentesMesTotal = transacoes
       .filter((t) => {
         if (t.kind !== "despesa" || t.status === "pago") return false;
+        // Itens de cartão de crédito são cobrados pela fatura (bloco abaixo).
+        if (t.invoiceId || t.creditCardId) return false;
         const ref = t.dueDate ?? t.data;
         if (!ref) return false;
         const d = new Date(ref + "T00:00:00");
         return d >= mesInicio && d <= mesFim;
       })
       .reduce((s, t) => s + t.valor, 0);
+
+    const faturasAbertasTotal = faturas
+      .filter((f) => f.status === "aberta" || f.status === "fechada")
+      .filter((f) => {
+        const d = new Date(f.dueDate + "T00:00:00");
+        return d >= mesInicio && d <= mesFim;
+      })
+      .reduce((sum, f) => {
+        // Exclui itens com person_id (terceiros reembolsam) — não pesa no meu Livre para Gastar
+        const meuTotal = transacoes
+          .filter((t) => t.invoiceId === f.id && !t.personId)
+          .reduce((s, t) => s + t.valor, 0);
+        return sum + meuTotal;
+      }, 0);
+
 
     const investimentos: Investment[] = (investmentsQ.data ?? []).map((r: any) => ({
       id: r.id,

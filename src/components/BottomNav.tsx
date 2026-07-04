@@ -106,7 +106,7 @@ export function BottomNav() {
                 hint="Emprestou, deve ou usaram seu cartão"
                 icon={<Users className="h-5 w-5" />}
                 tone="bg-warning/15 text-warning"
-                onClick={() => go("/nova-terceiros")}
+                onClick={() => go("/nova-transacao?kind=despesa&terceiro=1")}
               />
             </div>
           </div>

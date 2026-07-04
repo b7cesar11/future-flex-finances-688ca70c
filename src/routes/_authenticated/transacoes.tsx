@@ -20,7 +20,8 @@ export const Route = createFileRoute("/_authenticated/transacoes")({
 
 function Transacoes() {
   const { transacoes, categorias, contas, setTransactionStatus, deleteTransaction } = useFinance();
-  const { range, setKind, isInRange } = usePeriod();
+  const { range, isInRange } = usePeriod();
+  const { label, goToNextMonth, goToPreviousMonth, canGoNext } = useMonthNavigator();
 
   const catMap = useMemo(() => new Map(categorias.map((c) => [c.id, c])), [categorias]);
   const contaMap = useMemo(() => new Map(contas.map((c) => [c.id, c])), [contas]);
@@ -57,16 +58,6 @@ function Transacoes() {
     return Array.from(map.entries());
   }, [filtered]);
 
-  // For mensal range: navegação rápida entre meses
-  const shiftMonth = (delta: number) => {
-    const d = new Date(range.start);
-    d.setMonth(d.getMonth() + delta);
-    // re-aplicar tipo mensal apontando para esse mês via custom range
-    // mais simples: apenas alterna para mensal e o usuário muda via Custom
-    if (range.kind !== "mensal") setKind("mensal");
-    // Nota: para multi-mês ideal, usar setCustom — mantemos kind=mensal por simplicidade
-  };
-
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   return (
@@ -75,17 +66,18 @@ function Transacoes() {
         <div className="flex items-center justify-between rounded-2xl bg-card p-2 shadow-card">
           <button
             type="button"
-            onClick={() => shiftMonth(-1)}
+            onClick={goToPreviousMonth}
             className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-foreground"
             aria-label="Mês anterior"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
-          <p className="text-xs font-semibold capitalize text-foreground">{range.label}</p>
+          <p className="text-xs font-semibold capitalize text-foreground">{label}</p>
           <button
             type="button"
-            onClick={() => shiftMonth(1)}
-            className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-foreground"
+            onClick={goToNextMonth}
+            disabled={!canGoNext}
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-foreground disabled:opacity-30"
             aria-label="Próximo mês"
           >
             <ChevronRight className="h-5 w-5" />

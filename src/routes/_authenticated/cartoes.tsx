@@ -203,6 +203,10 @@ function CartoesPage() {
           if (confirmPay) await pagarFatura(confirmPay);
         }}
       />
+
+      {openGroup && (
+        <ParcelasList groupId={openGroup} onClose={() => setOpenGroup(null)} />
+      )}
     </AppShell>
   );
 }

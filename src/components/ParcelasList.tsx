@@ -57,15 +57,25 @@ export function ParcelasList({
   return (
     <Sheet onClose={onClose}>
       <header className="flex items-start justify-between gap-3 border-b border-border/60 px-4 py-4">
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="truncate text-base font-semibold text-foreground">{descricao}</p>
-          <p className="text-[11px] text-muted-foreground">
-            {pessoaNome ? `👤 ${pessoaNome} · ` : ""}
-            Total {formatBRLFull(total)} · Parcela {formatBRLFull(valorParcela)}
-          </p>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">
-            {pagas}/{totalParcelas} pagas
-          </p>
+          {pessoaNome && (
+            <p className="mt-0.5 text-[11px] text-muted-foreground">👤 {pessoaNome}</p>
+          )}
+          <div className="mt-2">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Saldo restante
+            </p>
+            <p className="text-2xl font-bold tabular-nums text-destructive">
+              {formatBRLFull(restante)}
+            </p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">
+              {pagas}/{totalParcelas} pagas · Parcela {formatBRLFull(valorParcela)}
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              de um total de {formatBRLFull(total)}
+            </p>
+          </div>
         </div>
         <button
           type="button"
@@ -76,6 +86,7 @@ export function ParcelasList({
           <X className="h-4 w-4" />
         </button>
       </header>
+
 
       <ul className="max-h-[55vh] divide-y divide-border/60 overflow-y-auto">
         {parcelas.map((t) => {

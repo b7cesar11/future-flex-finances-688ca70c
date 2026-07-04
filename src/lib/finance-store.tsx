@@ -1395,9 +1395,33 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       addAccount: async (a) => {
         await addAccountM.mutateAsync(a);
       },
-
+      addCreditCard: async (c) => {
+        await addCreditCardM.mutateAsync(c);
+      },
+      criarCompraParcelada: async (input) => {
+        return await criarCompraParceladaM.mutateAsync(input);
+      },
+      pagarParcela: async (id) => {
+        await pagarParcelaM.mutateAsync(id);
+      },
+      estornarParcela: async (id) => {
+        await estornarParcelaM.mutateAsync(id);
+      },
+      adiantarParcelas: async (ids) => {
+        await adiantarParcelasM.mutateAsync(ids);
+      },
+      encerrarParcelamento: async (groupId, modo, customAmount) => {
+        await encerrarParcelamentoM.mutateAsync({ groupId, modo, customAmount });
+      },
+      pagarFatura: async (id) => {
+        await pagarFaturaM.mutateAsync(id);
+      },
+      estornarFatura: async (id) => {
+        await estornarFaturaM.mutateAsync(id);
+      },
     };
   }, [
+
     profileQ.data,
     accountsQ.data,
     debtsQ.data,

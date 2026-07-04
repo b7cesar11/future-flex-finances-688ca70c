@@ -1,6 +1,8 @@
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidate, type AcaoImpacto } from "@/lib/invalidation";
+
 
 export type DebtType = "Cartão de Crédito" | "Empréstimo" | "Financiamento";
 export type DebtCategory = "parcelada" | "variavel" | "fixa" | "congelada";

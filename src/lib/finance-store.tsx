@@ -842,6 +842,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       categoriaId: r.category,
       contaId: r.account_id ?? "",
       envelopeId: r.envelope_id ?? null,
+      personId: r.person_id ?? null,
     }));
     const fontesRenda: IncomeSource[] = (incomeQ.data ?? []).map((r: any) => ({
       id: r.id,

@@ -546,6 +546,8 @@ export type Database = {
           installment_total: number | null
           invoice_id: string | null
           is_fixed: boolean
+          origin_invoice_id: string | null
+          origin_transaction_id: string | null
           paid_at: string | null
           person_id: string | null
           purchase_group_id: string | null
@@ -568,6 +570,8 @@ export type Database = {
           installment_total?: number | null
           invoice_id?: string | null
           is_fixed?: boolean
+          origin_invoice_id?: string | null
+          origin_transaction_id?: string | null
           paid_at?: string | null
           person_id?: string | null
           purchase_group_id?: string | null
@@ -590,6 +594,8 @@ export type Database = {
           installment_total?: number | null
           invoice_id?: string | null
           is_fixed?: boolean
+          origin_invoice_id?: string | null
+          origin_transaction_id?: string | null
           paid_at?: string | null
           person_id?: string | null
           purchase_group_id?: string | null
@@ -627,6 +633,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "transactions_origin_invoice_id_fkey"
+            columns: ["origin_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "credit_card_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_origin_transaction_id_fkey"
+            columns: ["origin_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "transactions_person_id_fkey"
             columns: ["person_id"]
             isOneToOne: false
@@ -640,10 +660,38 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      adiantar_parcelas: { Args: { _tx_ids: string[] }; Returns: string }
+      atualizar_ciclo_faturas: { Args: never; Returns: undefined }
+      criar_compra_parcelada: {
+        Args: {
+          _account_id?: string
+          _amount_total: number
+          _category: string
+          _credit_card_id?: string
+          _description: string
+          _envelope_id?: string
+          _first_due_date: string
+          _installments: number
+          _person_id?: string
+        }
+        Returns: string
+      }
+      encerrar_parcelamento: {
+        Args: { _custom_amount?: number; _group_id: string; _modo: string }
+        Returns: undefined
+      }
+      estornar_fatura: { Args: { _invoice_id: string }; Returns: undefined }
+      estornar_parcela: { Args: { _tx_id: string }; Returns: undefined }
       get_or_create_invoice: {
         Args: { _credit_card_id: string; _reference_month: string }
         Returns: string
       }
+      installment_status: {
+        Args: { _due_date: string; _paid_at: string; _ref_month?: string }
+        Returns: string
+      }
+      pagar_fatura: { Args: { _invoice_id: string }; Returns: string }
+      pagar_parcela: { Args: { _tx_id: string }; Returns: undefined }
       pay_debt_installment: { Args: { _debt_id: string }; Returns: undefined }
       pay_debt_with_amount: {
         Args: { _amount: number; _debt_id: string }

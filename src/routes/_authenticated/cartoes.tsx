@@ -29,6 +29,7 @@ function CartoesPage() {
   } = useFinance();
   const [showNew, setShowNew] = useState(false);
   const [confirmPay, setConfirmPay] = useState<string | null>(null);
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
 
   const pessoasById = useMemo(() => {
     const m = new Map<string, string>();

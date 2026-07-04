@@ -37,17 +37,18 @@ function Terceiros() {
   const [editDue, setEditDue] = useState("");
 
   const groups = useMemo(() => {
-    const map = new Map<string, ThirdParty[]>();
+    const map = new Map<string, { items: ThirdParty[]; personId: string | null }>();
     for (const t of terceiros) {
-      const key = t.personName.trim() || "—";
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(t);
+      const key = t.personId ?? `__name__${(t.personName || "—").trim()}`;
+      if (!map.has(key)) map.set(key, { items: [], personId: t.personId });
+      map.get(key)!.items.push(t);
     }
     return Array.from(map.entries())
-      .map(([name, items]) => ({
-        name,
-        items: items.sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? "")),
-        subtotal: items.reduce((s, t) => s + signedAmount(t), 0),
+      .map(([, v]) => ({
+        name: (v.items[0].personName || "—").trim(),
+        personId: v.personId,
+        items: v.items.sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? "")),
+        subtotal: v.items.reduce((s, t) => s + signedAmount(t), 0),
       }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [terceiros]);

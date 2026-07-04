@@ -177,6 +177,7 @@ interface FinanceState {
     categoriaId: string;
     contaId: string;
     envelopeId?: string | null;
+    personId?: string | null;
   }) => Promise<void>;
   setTransactionStatus: (id: string, status: PaymentStatus) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;

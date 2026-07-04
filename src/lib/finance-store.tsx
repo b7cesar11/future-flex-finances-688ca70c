@@ -108,7 +108,7 @@ export interface Envelope {
 }
 
 export type ThirdPartyDirection = "a_pagar" | "a_receber";
-export type PaymentMethod = "conta" | "cartao_credito" | "sem_transacao";
+export type PaymentMethod = "conta" | "cartao_credito" | "cartao_terceiro" | "sem_transacao" | "dinheiro";
 
 export interface ThirdParty {
   id: string;
@@ -118,6 +118,7 @@ export interface ThirdParty {
   direction: ThirdPartyDirection;
   paymentMethod: PaymentMethod;
   creditCardId: string | null;
+  nomeCartaoTerceiro: string | null;
   purchaseGroupId: string | null;
   amount: number;
   dueDate: string | null;
@@ -268,6 +269,7 @@ interface FinanceState {
     accountId?: string | null;
     personId?: string | null;
     envelopeId?: string | null;
+    parcelasJaPagas?: number;
   }) => Promise<string | null>;
   pagarParcela: (txId: string) => Promise<void>;
   estornarParcela: (txId: string) => Promise<void>;
@@ -617,6 +619,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         direction: t.direction,
         payment_method: t.paymentMethod,
         credit_card_id: t.creditCardId ?? null,
+        nome_cartao_terceiro: t.nomeCartaoTerceiro ?? null,
         purchase_group_id: t.purchaseGroupId ?? null,
         amount: t.amount,
         due_date: t.dueDate,
@@ -986,6 +989,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       accountId?: string | null;
       personId?: string | null;
       envelopeId?: string | null;
+      parcelasJaPagas?: number;
     }) => {
       const { data, error } = await (supabase as any).rpc("criar_compra_parcelada", {
         _description: input.description,
@@ -997,6 +1001,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         _account_id: input.accountId ?? null,
         _person_id: input.personId ?? null,
         _envelope_id: input.envelopeId ?? null,
+        _parcelas_ja_pagas: input.parcelasJaPagas ?? 0,
       });
       if (error) throw error;
       return (data as string) ?? null;
@@ -1254,6 +1259,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       direction: (r.direction ?? "a_receber") as ThirdPartyDirection,
       paymentMethod: (r.payment_method ?? "conta") as PaymentMethod,
       creditCardId: r.credit_card_id ?? null,
+      nomeCartaoTerceiro: r.nome_cartao_terceiro ?? null,
       purchaseGroupId: r.purchase_group_id ?? null,
       amount: Number(r.amount),
       dueDate: r.due_date,

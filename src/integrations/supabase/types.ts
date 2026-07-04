@@ -246,6 +246,7 @@ export type Database = {
       debts: {
         Row: {
           category: Database["public"]["Enums"]["debt_category"]
+          commitment_group_id: string | null
           created_at: string
           due_day: number | null
           id: string
@@ -264,6 +265,7 @@ export type Database = {
         }
         Insert: {
           category?: Database["public"]["Enums"]["debt_category"]
+          commitment_group_id?: string | null
           created_at?: string
           due_day?: number | null
           id?: string
@@ -282,6 +284,7 @@ export type Database = {
         }
         Update: {
           category?: Database["public"]["Enums"]["debt_category"]
+          commitment_group_id?: string | null
           created_at?: string
           due_day?: number | null
           id?: string
@@ -298,7 +301,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "debts_commitment_group_id_fkey"
+            columns: ["commitment_group_id"]
+            isOneToOne: false
+            referencedRelation: "commitment_groups"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       income_sources: {
         Row: {
@@ -753,6 +764,17 @@ export type Database = {
         }
         Returns: string
       }
+      criar_divida_compromisso: {
+        Args: {
+          _category?: Database["public"]["Enums"]["debt_category"]
+          _debt_type: Database["public"]["Enums"]["debt_type"]
+          _first_due_date: string
+          _installments: number
+          _monthly_installment: number
+          _name: string
+        }
+        Returns: string
+      }
       encerrar_parcelamento: {
         Args: { _custom_amount?: number; _group_id: string; _modo: string }
         Returns: undefined
@@ -788,6 +810,7 @@ export type Database = {
         | "emprestimo"
         | "refinanciamento"
         | "recorrencia"
+        | "financiamento"
       debt_category: "parcelada" | "variavel" | "fixa" | "congelada"
       debt_type: "Cartão de Crédito" | "Empréstimo" | "Financiamento"
       income_status: "recebido" | "pendente"
@@ -943,6 +966,7 @@ export const Constants = {
         "emprestimo",
         "refinanciamento",
         "recorrencia",
+        "financiamento",
       ],
       debt_category: ["parcelada", "variavel", "fixa", "congelada"],
       debt_type: ["Cartão de Crédito", "Empréstimo", "Financiamento"],

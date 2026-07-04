@@ -6,7 +6,7 @@ import { PayCheckbox } from "@/components/PayCheckbox";
 import { OverdueBadge } from "@/components/OverdueBadge";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { formatBRLFull, useFinance } from "@/lib/finance-store";
-import { usePeriod } from "@/lib/period-filter";
+import { usePeriod, useMonthNavigator } from "@/lib/period-filter";
 
 export const Route = createFileRoute("/_authenticated/transacoes")({
   head: () => ({

@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       accounts: {
         Row: {
+          active: boolean
           balance: number
           color: string
           created_at: string
@@ -28,6 +29,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          active?: boolean
           balance?: number
           color?: string
           created_at?: string
@@ -40,6 +42,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          active?: boolean
           balance?: number
           color?: string
           created_at?: string
@@ -85,6 +88,97 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      credit_card_invoices: {
+        Row: {
+          closing_date: string
+          created_at: string
+          credit_card_id: string
+          due_date: string
+          id: string
+          paid_at: string | null
+          reference_month: string
+          status: Database["public"]["Enums"]["invoice_status"]
+          updated_at: string
+        }
+        Insert: {
+          closing_date: string
+          created_at?: string
+          credit_card_id: string
+          due_date: string
+          id?: string
+          paid_at?: string | null
+          reference_month: string
+          status?: Database["public"]["Enums"]["invoice_status"]
+          updated_at?: string
+        }
+        Update: {
+          closing_date?: string
+          created_at?: string
+          credit_card_id?: string
+          due_date?: string
+          id?: string
+          paid_at?: string | null
+          reference_month?: string
+          status?: Database["public"]["Enums"]["invoice_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_card_invoices_credit_card_id_fkey"
+            columns: ["credit_card_id"]
+            isOneToOne: false
+            referencedRelation: "credit_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credit_cards: {
+        Row: {
+          active: boolean
+          closing_day: number
+          created_at: string
+          credit_limit: number | null
+          due_day: number
+          id: string
+          name: string
+          payment_account_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          closing_day: number
+          created_at?: string
+          credit_limit?: number | null
+          due_day: number
+          id?: string
+          name: string
+          payment_account_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          closing_day?: number
+          created_at?: string
+          credit_limit?: number | null
+          due_day?: number
+          id?: string
+          name?: string
+          payment_account_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_cards_payment_account_id_fkey"
+            columns: ["payment_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       debts: {
         Row: {
@@ -255,6 +349,7 @@ export type Database = {
       }
       people: {
         Row: {
+          active: boolean
           avatar_url: string | null
           created_at: string
           id: string
@@ -265,6 +360,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          active?: boolean
           avatar_url?: string | null
           created_at?: string
           id?: string
@@ -275,6 +371,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          active?: boolean
           avatar_url?: string | null
           created_at?: string
           id?: string
@@ -362,13 +459,17 @@ export type Database = {
         Row: {
           amount: number
           created_at: string
+          credit_card_id: string | null
+          direction: Database["public"]["Enums"]["third_party_direction"]
           due_date: string | null
           id: string
           installments_left: number
           is_installment: boolean
           notes: string | null
+          payment_method: Database["public"]["Enums"]["payment_method_type"]
           person_id: string | null
           person_name: string
+          purchase_group_id: string | null
           status: Database["public"]["Enums"]["payment_status"]
           type: Database["public"]["Enums"]["third_party_type"]
           updated_at: string
@@ -377,13 +478,17 @@ export type Database = {
         Insert: {
           amount?: number
           created_at?: string
+          credit_card_id?: string | null
+          direction?: Database["public"]["Enums"]["third_party_direction"]
           due_date?: string | null
           id?: string
           installments_left?: number
           is_installment?: boolean
           notes?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method_type"]
           person_id?: string | null
           person_name: string
+          purchase_group_id?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
           type: Database["public"]["Enums"]["third_party_type"]
           updated_at?: string
@@ -392,19 +497,30 @@ export type Database = {
         Update: {
           amount?: number
           created_at?: string
+          credit_card_id?: string | null
+          direction?: Database["public"]["Enums"]["third_party_direction"]
           due_date?: string | null
           id?: string
           installments_left?: number
           is_installment?: boolean
           notes?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method_type"]
           person_id?: string | null
           person_name?: string
+          purchase_group_id?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
           type?: Database["public"]["Enums"]["third_party_type"]
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "third_party_financials_credit_card_id_fkey"
+            columns: ["credit_card_id"]
+            isOneToOne: false
+            referencedRelation: "credit_cards"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "third_party_financials_person_id_fkey"
             columns: ["person_id"]
@@ -420,13 +536,19 @@ export type Database = {
           amount: number
           category: string
           created_at: string
+          credit_card_id: string | null
           date: string
           description: string
           due_date: string | null
           envelope_id: string | null
           id: string
+          installment_number: number | null
+          installment_total: number | null
+          invoice_id: string | null
           is_fixed: boolean
+          paid_at: string | null
           person_id: string | null
+          purchase_group_id: string | null
           status: Database["public"]["Enums"]["payment_status"]
           type: Database["public"]["Enums"]["tx_kind"]
           user_id: string
@@ -436,13 +558,19 @@ export type Database = {
           amount: number
           category?: string
           created_at?: string
+          credit_card_id?: string | null
           date?: string
           description?: string
           due_date?: string | null
           envelope_id?: string | null
           id?: string
+          installment_number?: number | null
+          installment_total?: number | null
+          invoice_id?: string | null
           is_fixed?: boolean
+          paid_at?: string | null
           person_id?: string | null
+          purchase_group_id?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
           type: Database["public"]["Enums"]["tx_kind"]
           user_id: string
@@ -452,13 +580,19 @@ export type Database = {
           amount?: number
           category?: string
           created_at?: string
+          credit_card_id?: string | null
           date?: string
           description?: string
           due_date?: string | null
           envelope_id?: string | null
           id?: string
+          installment_number?: number | null
+          installment_total?: number | null
+          invoice_id?: string | null
           is_fixed?: boolean
+          paid_at?: string | null
           person_id?: string | null
+          purchase_group_id?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
           type?: Database["public"]["Enums"]["tx_kind"]
           user_id?: string
@@ -472,10 +606,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "transactions_credit_card_id_fkey"
+            columns: ["credit_card_id"]
+            isOneToOne: false
+            referencedRelation: "credit_cards"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "transactions_envelope_id_fkey"
             columns: ["envelope_id"]
             isOneToOne: false
             referencedRelation: "budget_envelopes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "credit_card_invoices"
             referencedColumns: ["id"]
           },
           {
@@ -492,6 +640,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_or_create_invoice: {
+        Args: { _credit_card_id: string; _reference_month: string }
+        Returns: string
+      }
       pay_debt_installment: { Args: { _debt_id: string }; Returns: undefined }
       pay_debt_with_amount: {
         Args: { _amount: number; _debt_id: string }
@@ -509,8 +661,11 @@ export type Database = {
       debt_category: "parcelada" | "variavel" | "fixa" | "congelada"
       debt_type: "Cartão de Crédito" | "Empréstimo" | "Financiamento"
       income_status: "recebido" | "pendente"
+      invoice_status: "futura" | "aberta" | "fechada" | "paga"
+      payment_method_type: "conta" | "cartao_credito" | "dinheiro"
       payment_status: "pago" | "pendente" | "atrasado"
       person_type: "contato" | "empresa" | "familia"
+      third_party_direction: "a_pagar" | "a_receber"
       third_party_type:
         | "emprestei_dinheiro"
         | "usou_meu_cartao"
@@ -652,8 +807,11 @@ export const Constants = {
       debt_category: ["parcelada", "variavel", "fixa", "congelada"],
       debt_type: ["Cartão de Crédito", "Empréstimo", "Financiamento"],
       income_status: ["recebido", "pendente"],
+      invoice_status: ["futura", "aberta", "fechada", "paga"],
+      payment_method_type: ["conta", "cartao_credito", "dinheiro"],
       payment_status: ["pago", "pendente", "atrasado"],
       person_type: ["contato", "empresa", "familia"],
+      third_party_direction: ["a_pagar", "a_receber"],
       third_party_type: [
         "emprestei_dinheiro",
         "usou_meu_cartao",

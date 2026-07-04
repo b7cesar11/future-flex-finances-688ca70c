@@ -119,8 +119,13 @@ function CartoesPage() {
                         {items.map((t) => {
                           const st = installmentStatus(t.paidAt, t.dueDate);
                           const nomePessoa = t.personId ? pessoasById.get(t.personId) : null;
+                          const clickable = !!t.purchaseGroupId;
                           return (
-                            <li key={t.id} className="rounded-lg bg-card px-2 py-2 text-xs">
+                            <li
+                              key={t.id}
+                              className={`rounded-lg bg-card px-2 py-2 text-xs ${clickable ? "cursor-pointer hover:ring-1 hover:ring-primary/30" : ""}`}
+                              onClick={clickable ? () => setOpenGroup(t.purchaseGroupId!) : undefined}
+                            >
                               <div className="flex items-center justify-between gap-2">
                                 <div className="min-w-0 flex-1">
                                   <p className="truncate font-medium text-foreground">{t.descricao}</p>
@@ -138,6 +143,7 @@ function CartoesPage() {
                                         {t.installmentNumber}/{t.installmentTotal}
                                       </span>
                                     )}
+                                    {clickable && <span className="text-primary">· ver parcelas</span>}
                                   </div>
                                 </div>
                                 <span className="tabular-nums font-semibold">{formatBRLFull(t.valor)}</span>

@@ -27,6 +27,7 @@ function NovaTransacao() {
   const [categoriaId, setCategoriaId] = useState(categorias[0]?.id ?? "");
   const [contaId, setContaId] = useState(contas[0]?.id ?? "");
   const [envelopeId, setEnvelopeId] = useState<string>("");
+  const [personId, setPersonId] = useState<string>("");
   const [data, setData] = useState(today);
   const [dueDate, setDueDate] = useState(today);
   const [status, setStatus] = useState<PaymentStatus>("pago");

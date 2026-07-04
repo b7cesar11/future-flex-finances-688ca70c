@@ -108,7 +108,7 @@ export interface Envelope {
 }
 
 export type ThirdPartyDirection = "a_pagar" | "a_receber";
-export type PaymentMethod = "conta" | "cartao_credito" | "sem_transacao";
+export type PaymentMethod = "conta" | "cartao_credito" | "cartao_terceiro" | "sem_transacao" | "dinheiro";
 
 export interface ThirdParty {
   id: string;
@@ -118,6 +118,7 @@ export interface ThirdParty {
   direction: ThirdPartyDirection;
   paymentMethod: PaymentMethod;
   creditCardId: string | null;
+  nomeCartaoTerceiro: string | null;
   purchaseGroupId: string | null;
   amount: number;
   dueDate: string | null;

@@ -820,6 +820,32 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  const addAccountM = useMutation({
+    mutationFn: async (a: {
+      nome: string;
+      tipo: AccountType;
+      saldoInicial: number;
+      emoji?: string;
+      cor?: string;
+    }) => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) throw new Error("Não autenticado");
+      const { error } = await supabase.from("accounts").insert({
+        user_id: user.user.id,
+        name: a.nome,
+        type: a.tipo,
+        balance: a.saldoInicial,
+        initial_balance: a.saldoInicial,
+        emoji: a.emoji ?? "🏦",
+        color: a.cor ?? "bg-sky-500/20 text-sky-300",
+      } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["accounts"] });
+    },
+  });
+
 
   const value = useMemo<FinanceState>(() => {
     const dividas: Debt[] = (debtsQ.data ?? []).map((r: any) => ({

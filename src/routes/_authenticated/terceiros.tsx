@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Users, Plus, Trash2, Pencil, Check, X } from "lucide-react";
+import { Users, Plus, Trash2, Pencil, Check, X, ListOrdered } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { PayCheckbox } from "@/components/PayCheckbox";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { OverdueBadge } from "@/components/OverdueBadge";
+import { ParcelasList } from "@/components/ParcelasList";
 import {
   formatBRLFull,
   useFinance,

@@ -269,6 +269,7 @@ interface FinanceState {
     accountId?: string | null;
     personId?: string | null;
     envelopeId?: string | null;
+    parcelasJaPagas?: number;
   }) => Promise<string | null>;
   pagarParcela: (txId: string) => Promise<void>;
   estornarParcela: (txId: string) => Promise<void>;

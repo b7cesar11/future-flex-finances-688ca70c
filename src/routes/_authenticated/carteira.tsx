@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Wallet, Plus } from "lucide-react";
+import { Wallet, Plus, X } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { formatBRLFull, useFinance } from "@/lib/finance-store";
+import { formatBRLFull, useFinance, type AccountType } from "@/lib/finance-store";
 
 export const Route = createFileRoute("/_authenticated/carteira")({
   head: () => ({
@@ -13,8 +14,41 @@ export const Route = createFileRoute("/_authenticated/carteira")({
   component: Carteira,
 });
 
+const TIPOS: AccountType[] = ["Conta Corrente", "Poupança", "Dinheiro", "Cartão de Crédito"];
+
 function Carteira() {
-  const { contas, saldoReal } = useFinance();
+  const { contas, saldoReal, addAccount } = useFinance();
+  const [open, setOpen] = useState(false);
+  const [nome, setNome] = useState("");
+  const [tipo, setTipo] = useState<AccountType>("Conta Corrente");
+  const [saldo, setSaldo] = useState("");
+  const [emoji, setEmoji] = useState("🏦");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!nome.trim() || saving) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await addAccount({
+        nome: nome.trim(),
+        tipo,
+        saldoInicial: Number(saldo.replace(",", ".")) || 0,
+        emoji,
+      });
+      setOpen(false);
+      setNome("");
+      setSaldo("");
+      setEmoji("🏦");
+      setTipo("Conta Corrente");
+    } catch (err: any) {
+      setError(err?.message ?? "Erro ao salvar");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <AppShell title="Carteira" subtitle="Saldo real, calculado dos lançamentos pagos">
@@ -34,6 +68,7 @@ function Carteira() {
           <h2 className="text-base font-semibold">Minhas contas</h2>
           <button
             type="button"
+            onClick={() => setOpen(true)}
             className="flex items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-foreground"
           >
             <Plus className="h-3.5 w-3.5" /> Conta
@@ -65,6 +100,91 @@ function Carteira() {
           ))}
         </ul>
       </section>
+
+      {open && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-4"
+          onClick={() => setOpen(false)}
+        >
+          <form
+            onClick={(e) => e.stopPropagation()}
+            onSubmit={submit}
+            className="w-full max-w-md space-y-4 rounded-t-3xl bg-card p-5 shadow-card sm:rounded-3xl"
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-semibold">Nova conta</h3>
+              <button type="button" onClick={() => setOpen(false)} aria-label="Fechar">
+                <X className="h-4 w-4 text-muted-foreground" />
+              </button>
+            </div>
+            <label className="block">
+              <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Nome
+              </span>
+              <input
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                placeholder="Ex: Nubank"
+                className="w-full rounded-xl bg-surface-elevated px-3 py-2.5 text-sm outline-none"
+                autoFocus
+              />
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="block">
+                <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Tipo
+                </span>
+                <select
+                  value={tipo}
+                  onChange={(e) => setTipo(e.target.value as AccountType)}
+                  className="w-full rounded-xl bg-surface-elevated px-3 py-2.5 text-sm outline-none"
+                >
+                  {TIPOS.map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Saldo inicial
+                </span>
+                <input
+                  inputMode="decimal"
+                  value={saldo}
+                  onChange={(e) => setSaldo(e.target.value.replace(/[^\d.,]/g, ""))}
+                  placeholder="0,00"
+                  className="w-full rounded-xl bg-surface-elevated px-3 py-2.5 text-sm tabular-nums outline-none"
+                />
+              </label>
+            </div>
+            <label className="block">
+              <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Emoji
+              </span>
+              <input
+                value={emoji}
+                onChange={(e) => setEmoji(e.target.value)}
+                maxLength={2}
+                className="w-16 rounded-xl bg-surface-elevated px-3 py-2.5 text-center text-lg outline-none"
+              />
+            </label>
+            {error && (
+              <p className="rounded-xl bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                {error}
+              </p>
+            )}
+            <button
+              type="submit"
+              disabled={saving || !nome.trim()}
+              className="w-full rounded-2xl bg-gradient-primary py-3 text-sm font-bold text-primary-foreground shadow-glow disabled:opacity-50"
+            >
+              {saving ? "Salvando..." : "Criar conta"}
+            </button>
+          </form>
+        </div>
+      )}
     </AppShell>
   );
 }

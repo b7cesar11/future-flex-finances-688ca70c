@@ -404,14 +404,17 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   });
 
 
+  // Todas as invalidações passam por este helper que consulta o MAPA_DE_IMPACTO
+  // (src/lib/invalidation.ts). Nenhuma tela deve invalidar cache manualmente.
+  const bust = (acao: AcaoImpacto) => invalidate(qc, acao);
   const invalidateAll = () => {
-    qc.invalidateQueries({ queryKey: ["transactions"] });
-    qc.invalidateQueries({ queryKey: ["debts"] });
-    qc.invalidateQueries({ queryKey: ["accounts"] });
-    qc.invalidateQueries({ queryKey: ["third_party_financials"] });
-    qc.invalidateQueries({ queryKey: ["income_sources"] });
-    qc.invalidateQueries({ queryKey: ["people"] });
-    qc.invalidateQueries({ queryKey: ["budget_envelopes"] });
+    // Fallback legado usado por mutations antigas — dispara todas as áreas afetadas
+    bust("transacao_editada");
+    bust("divida_editada");
+    bust("terceiro_editado");
+    bust("renda_editada");
+    bust("pessoa_editada");
+    bust("envelope_editado");
   };
 
   const addDebtM = useMutation({

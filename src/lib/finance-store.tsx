@@ -619,6 +619,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         direction: t.direction,
         payment_method: t.paymentMethod,
         credit_card_id: t.creditCardId ?? null,
+        nome_cartao_terceiro: t.nomeCartaoTerceiro ?? null,
         purchase_group_id: t.purchaseGroupId ?? null,
         amount: t.amount,
         due_date: t.dueDate,

@@ -906,8 +906,6 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       })
       .reduce((s, t) => s + t.valor, 0);
 
-    const livreParaGastar = saldoReal - pendentesMesTotal - caixinhasTotal;
-
     const investimentos: Investment[] = (investmentsQ.data ?? []).map((r: any) => ({
       id: r.id,
       nome: r.name,
@@ -915,9 +913,23 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       valor: Number(r.amount),
       aporteSugerido: Number(r.suggested_contribution),
     }));
+
+    const pessoasById = new Map<string, string>();
+    const pessoas: Person[] = (peopleQ.data ?? []).map((r: any) => {
+      pessoasById.set(r.id, r.name);
+      return {
+        id: r.id,
+        name: r.name,
+        type: r.type as PersonType,
+        avatarUrl: r.avatar_url ?? null,
+        notes: r.notes ?? null,
+      };
+    });
+
     const terceiros: ThirdParty[] = (thirdPartyQ.data ?? []).map((r: any) => ({
       id: r.id,
-      personName: r.person_name,
+      personId: r.person_id ?? null,
+      personName: r.person_id ? (pessoasById.get(r.person_id) ?? r.person_name) : r.person_name,
       type: r.type as ThirdPartyType,
       amount: Number(r.amount),
       dueDate: r.due_date,
@@ -926,6 +938,35 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       status: r.status as PaymentStatus,
       notes: r.notes,
     }));
+
+    // ===== Envelopes com spent do mês corrente =====
+    const envelopes: Envelope[] = (envelopesQ.data ?? []).map((r: any) => {
+      const monthlyLimit = Number(r.monthly_limit ?? 0);
+      const currentSpent = transacoes
+        .filter((t) => {
+          if (t.envelopeId !== r.id) return false;
+          if (t.kind !== "despesa" || t.status !== "pago") return false;
+          const ref = t.data ?? t.dueDate;
+          if (!ref) return false;
+          const d = new Date(ref + "T00:00:00");
+          return d >= mesInicio && d <= mesFim;
+        })
+        .reduce((s, t) => s + t.valor, 0);
+      const remaining = monthlyLimit - currentSpent;
+      return {
+        id: r.id,
+        name: r.name,
+        monthlyLimit,
+        emoji: r.emoji ?? "📦",
+        cor: r.color ?? "bg-primary/20 text-primary",
+        currentSpent,
+        remaining,
+        committed: Math.max(0, remaining),
+      };
+    });
+
+    const envelopesCommitted = envelopes.reduce((s, e) => s + e.committed, 0);
+    const livreParaGastarAdj = saldoReal - pendentesMesTotal - caixinhasTotal - envelopesCommitted;
 
     return {
       rendaMensal: Number(profileQ.data?.monthly_income ?? 0),

@@ -1106,6 +1106,9 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       wipeAllData: async () => {
         await wipeM.mutateAsync();
       },
+      addAccount: async (a) => {
+        await addAccountM.mutateAsync(a);
+      },
 
     };
   }, [

@@ -989,6 +989,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       accountId?: string | null;
       personId?: string | null;
       envelopeId?: string | null;
+      parcelasJaPagas?: number;
     }) => {
       const { data, error } = await (supabase as any).rpc("criar_compra_parcelada", {
         _description: input.description,
@@ -1000,6 +1001,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         _account_id: input.accountId ?? null,
         _person_id: input.personId ?? null,
         _envelope_id: input.envelopeId ?? null,
+        _parcelas_ja_pagas: input.parcelasJaPagas ?? 0,
       });
       if (error) throw error;
       return (data as string) ?? null;

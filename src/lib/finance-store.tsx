@@ -51,6 +51,7 @@ export interface Transaction {
   isFixed: boolean;
   categoriaId: string;
   contaId: string;
+  envelopeId: string | null;
 }
 
 export interface SavingsGoal {
@@ -73,8 +74,30 @@ export interface Investment {
   aporteSugerido: number;
 }
 
+export type PersonType = "contato" | "empresa" | "familia";
+
+export interface Person {
+  id: string;
+  name: string;
+  type: PersonType;
+  avatarUrl: string | null;
+  notes: string | null;
+}
+
+export interface Envelope {
+  id: string;
+  name: string;
+  monthlyLimit: number;
+  emoji: string;
+  cor: string;
+  currentSpent: number; // derivado: soma de tx do mês
+  remaining: number; // monthlyLimit - currentSpent
+  committed: number; // max(0, remaining) — o que ainda está reservado
+}
+
 export interface ThirdParty {
   id: string;
+  personId: string | null;
   personName: string;
   type: ThirdPartyType;
   amount: number;
@@ -118,10 +141,13 @@ interface FinanceState {
   investimentos: Investment[];
   terceiros: ThirdParty[];
   fontesRenda: IncomeSource[];
+  pessoas: Person[];
+  envelopes: Envelope[];
+  envelopesCommitted: number; // soma do que ainda está reservado (limit - spent, floored at 0)
   saldoReal: number; // global wallet
   caixinhasTotal: number; // soma dos current_amount das metas
   pendentesMesTotal: number; // despesas pendentes com dueDate no mês atual
-  livreParaGastar: number; // saldoReal - pendentesMesTotal - caixinhasTotal
+  livreParaGastar: number; // saldoReal - pendentesMesTotal - caixinhasTotal - envelopesCommitted
   isLoading: boolean;
 
   // mutations
@@ -149,6 +175,7 @@ interface FinanceState {
     isFixed?: boolean;
     categoriaId: string;
     contaId: string;
+    envelopeId?: string | null;
   }) => Promise<void>;
   setTransactionStatus: (id: string, status: PaymentStatus) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
@@ -172,6 +199,12 @@ interface FinanceState {
   updateGoal: (id: string, patch: Partial<SavingsGoal>) => Promise<void>;
   deleteGoal: (id: string) => Promise<void>;
   contributeToGoal: (id: string, amount: number, accountId?: string | null) => Promise<void>;
+  addPerson: (p: { name: string; type?: PersonType; avatarUrl?: string | null; notes?: string | null }) => Promise<void>;
+  updatePerson: (id: string, patch: Partial<Person>) => Promise<void>;
+  deletePerson: (id: string) => Promise<void>;
+  addEnvelope: (e: { name: string; monthlyLimit: number; emoji?: string; cor?: string }) => Promise<void>;
+  updateEnvelope: (id: string, patch: Partial<Envelope>) => Promise<void>;
+  deleteEnvelope: (id: string) => Promise<void>;
   wipeAllData: () => Promise<void>;
 }
 

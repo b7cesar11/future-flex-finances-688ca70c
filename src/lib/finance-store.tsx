@@ -1279,7 +1279,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     });
 
     const envelopesCommitted = envelopes.reduce((s, e) => s + e.committed, 0);
-    const livreParaGastarAdj = saldoReal - pendentesMesTotal - caixinhasTotal - envelopesCommitted;
+    const livreParaGastarAdj =
+      saldoReal - pendentesMesTotal - faturasAbertasTotal - caixinhasTotal - envelopesCommitted;
 
     return {
       rendaMensal: Number(profileQ.data?.monthly_income ?? 0),
@@ -1295,10 +1296,14 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       pessoas,
       envelopes,
       envelopesCommitted,
+      cartoes,
+      faturas,
+      faturasAbertasTotal,
       saldoReal,
       caixinhasTotal,
       pendentesMesTotal,
       livreParaGastar: livreParaGastarAdj,
+
       isLoading:
 
         profileQ.isLoading ||

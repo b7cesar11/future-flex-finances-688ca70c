@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_authenticated/nova-transacao")({
 
 function NovaTransacao() {
   const { kind = "despesa" } = useSearch({ from: "/_authenticated/nova-transacao" });
-  const { categorias, contas, addTransaction } = useFinance();
+  const { categorias, contas, envelopes, addTransaction } = useFinance();
   const navigate = useNavigate();
 
   const today = new Date().toISOString().slice(0, 10);
@@ -26,6 +26,7 @@ function NovaTransacao() {
   const [valor, setValor] = useState("");
   const [categoriaId, setCategoriaId] = useState(categorias[0]?.id ?? "");
   const [contaId, setContaId] = useState(contas[0]?.id ?? "");
+  const [envelopeId, setEnvelopeId] = useState<string>("");
   const [data, setData] = useState(today);
   const [dueDate, setDueDate] = useState(today);
   const [status, setStatus] = useState<PaymentStatus>("pago");

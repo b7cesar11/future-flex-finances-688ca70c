@@ -179,6 +179,31 @@ function NovaTransacao() {
           </select>
         </Field>
 
+        <Field label="Pessoa vinculada (opcional)">
+          {pessoas.length > 0 ? (
+            <select
+              value={personId}
+              onChange={(e) => setPersonId(e.target.value)}
+              className="w-full rounded-xl bg-surface-elevated px-3 py-2.5 text-sm outline-none"
+            >
+              <option value="">— Sem pessoa —</option>
+              {pessoas.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <Link
+              to="/contatos"
+              className="flex items-center justify-center gap-2 rounded-xl bg-surface-elevated px-3 py-2.5 text-xs font-semibold text-primary"
+            >
+              <UserPlus className="h-3.5 w-3.5" /> Cadastrar um contato primeiro
+            </Link>
+          )}
+        </Field>
+
+
         {tipo === "despesa" && envelopes.length > 0 && (
           <Field label="Envelope (opcional)">
             <select

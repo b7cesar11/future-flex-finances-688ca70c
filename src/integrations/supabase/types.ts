@@ -665,36 +665,21 @@ export type Database = {
     Functions: {
       adiantar_parcelas: { Args: { _tx_ids: string[] }; Returns: string }
       atualizar_ciclo_faturas: { Args: never; Returns: undefined }
-      criar_compra_parcelada:
-        | {
-            Args: {
-              _account_id?: string
-              _amount_total: number
-              _category: string
-              _credit_card_id?: string
-              _description: string
-              _envelope_id?: string
-              _first_due_date: string
-              _installments: number
-              _person_id?: string
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              _account_id?: string
-              _amount_total: number
-              _category: string
-              _credit_card_id?: string
-              _description: string
-              _envelope_id?: string
-              _first_due_date: string
-              _installments: number
-              _parcelas_ja_pagas?: number
-              _person_id?: string
-            }
-            Returns: string
-          }
+      criar_compra_parcelada: {
+        Args: {
+          _account_id?: string
+          _amount_total: number
+          _category: string
+          _credit_card_id?: string
+          _description: string
+          _envelope_id?: string
+          _first_due_date: string
+          _installments: number
+          _parcelas_ja_pagas?: number
+          _person_id?: string
+        }
+        Returns: string
+      }
       encerrar_parcelamento: {
         Args: { _custom_amount?: number; _group_id: string; _modo: string }
         Returns: undefined

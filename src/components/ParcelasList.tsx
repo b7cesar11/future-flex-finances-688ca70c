@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { X, Lock, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import { X, Lock, CheckCircle2, XCircle, AlertTriangle, Loader2 } from "lucide-react";
 import { formatBRLFull, useFinance } from "@/lib/finance-store";
 import {
   installmentStatus,
@@ -34,6 +34,8 @@ export function ParcelasList({
   const [quitarOpen, setQuitarOpen] = useState(false);
   const [quitarValor, setQuitarValor] = useState("");
   const [cancelarOpen, setCancelarOpen] = useState(false);
+  const [busyTxId, setBusyTxId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   if (parcelas.length === 0) {
     return (
@@ -89,9 +91,15 @@ export function ParcelasList({
 
 
       <ul className="max-h-[55vh] divide-y divide-border/60 overflow-y-auto">
+        {actionError && (
+          <li className="mx-4 mt-3 rounded-xl bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive">
+            {actionError}
+          </li>
+        )}
         {parcelas.map((t) => {
           const st = installmentStatus(t.paidAt, t.dueDate ?? t.data);
           const pago = t.status === "pago";
+          const busy = busyTxId === t.id;
           return (
             <li key={t.id} className="flex items-center gap-3 px-4 py-3">
               <div className="min-w-0 flex-1">
@@ -131,15 +139,27 @@ export function ParcelasList({
                   onClick={async (e) => {
                     e.stopPropagation();
                     e.preventDefault();
+                    if (busyTxId) return;
+                    setActionError(null);
+                    setBusyTxId(t.id);
                     try {
                       await pagarParcela(t.id);
                     } catch (err) {
                       console.error("[ParcelasList] pagarParcela falhou", err);
+                      setActionError(
+                        err instanceof Error && /authenticated|jwt|unauthorized|not authorized/i.test(err.message)
+                          ? "Sua sessão expirou. Entre novamente e tente marcar a parcela como paga."
+                          : "Não foi possível marcar a parcela como paga. Tente novamente.",
+                      );
+                    } finally {
+                      setBusyTxId(null);
                     }
                   }}
-                  className="rounded-lg bg-primary/15 px-2 py-1.5 text-[11px] font-semibold text-primary"
+                  disabled={!!busyTxId}
+                  className="inline-flex min-w-20 items-center justify-center gap-1 rounded-lg bg-primary/15 px-2 py-1.5 text-[11px] font-semibold text-primary disabled:opacity-50"
                 >
-                  Marcar paga
+                  {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+                  {busy ? "Marcando" : "Marcar paga"}
                 </button>
               )}
             </li>

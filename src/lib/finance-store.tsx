@@ -979,10 +979,13 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       investimentos,
       terceiros,
       fontesRenda,
+      pessoas,
+      envelopes,
+      envelopesCommitted,
       saldoReal,
       caixinhasTotal,
       pendentesMesTotal,
-      livreParaGastar,
+      livreParaGastar: livreParaGastarAdj,
       isLoading:
 
         profileQ.isLoading ||
@@ -1049,6 +1052,24 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       },
       contributeToGoal: async (id, amount, accountId) => {
         await contributeGoalM.mutateAsync({ id, amount, accountId });
+      },
+      addPerson: async (p) => {
+        await addPersonM.mutateAsync(p);
+      },
+      updatePerson: async (id, patch) => {
+        await updatePersonM.mutateAsync({ id, patch });
+      },
+      deletePerson: async (id) => {
+        await deletePersonM.mutateAsync(id);
+      },
+      addEnvelope: async (e) => {
+        await addEnvelopeM.mutateAsync(e);
+      },
+      updateEnvelope: async (id, patch) => {
+        await updateEnvelopeM.mutateAsync({ id, patch });
+      },
+      deleteEnvelope: async (id) => {
+        await deleteEnvelopeM.mutateAsync(id);
       },
       wipeAllData: async () => {
         await wipeM.mutateAsync();

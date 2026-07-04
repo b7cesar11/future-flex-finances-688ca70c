@@ -379,6 +379,31 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  const creditCardsQ = useQuery({
+    queryKey: ["credit_cards"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("credit_cards")
+        .select("*")
+        .order("name", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const invoicesQ = useQuery({
+    queryKey: ["credit_card_invoices"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("credit_card_invoices")
+        .select("*")
+        .order("reference_month", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: ["transactions"] });
     qc.invalidateQueries({ queryKey: ["debts"] });

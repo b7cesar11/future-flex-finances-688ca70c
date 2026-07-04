@@ -55,7 +55,16 @@ export interface Transaction {
   contaId: string;
   envelopeId: string | null;
   personId: string | null;
+  creditCardId: string | null;
+  invoiceId: string | null;
+  purchaseGroupId: string | null;
+  installmentNumber: number | null;
+  installmentTotal: number | null;
+  paidAt: string | null;
+  originInvoiceId: string | null;
+  originTransactionId: string | null;
 }
+
 
 export interface SavingsGoal {
   id: string;

@@ -37,6 +37,7 @@ function Terceiros() {
   const [editing, setEditing] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState("");
   const [editDue, setEditDue] = useState("");
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
 
   const groups = useMemo(() => {
     const map = new Map<string, { items: ThirdParty[]; personId: string | null }>();

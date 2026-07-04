@@ -21,7 +21,10 @@ import { Route as AuthenticatedNovaTerceirosRouteImport } from './routes/_authen
 import { Route as AuthenticatedNovaDividaRouteImport } from './routes/_authenticated/nova-divida'
 import { Route as AuthenticatedMinhasDividasRouteImport } from './routes/_authenticated/minhas-dividas'
 import { Route as AuthenticatedMetasRouteImport } from './routes/_authenticated/metas'
+import { Route as AuthenticatedEnvelopesRouteImport } from './routes/_authenticated/envelopes'
+import { Route as AuthenticatedContatosRouteImport } from './routes/_authenticated/contatos'
 import { Route as AuthenticatedCarteiraRouteImport } from './routes/_authenticated/carteira'
+import { Route as AuthenticatedContatosIdRouteImport } from './routes/_authenticated/contatos.$id'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -85,16 +88,33 @@ const AuthenticatedMetasRoute = AuthenticatedMetasRouteImport.update({
   path: '/metas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedEnvelopesRoute = AuthenticatedEnvelopesRouteImport.update({
+  id: '/envelopes',
+  path: '/envelopes',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedContatosRoute = AuthenticatedContatosRouteImport.update({
+  id: '/contatos',
+  path: '/contatos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCarteiraRoute = AuthenticatedCarteiraRouteImport.update({
   id: '/carteira',
   path: '/carteira',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedContatosIdRoute = AuthenticatedContatosIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedContatosRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
   '/carteira': typeof AuthenticatedCarteiraRoute
+  '/contatos': typeof AuthenticatedContatosRouteWithChildren
+  '/envelopes': typeof AuthenticatedEnvelopesRoute
   '/metas': typeof AuthenticatedMetasRoute
   '/minhas-dividas': typeof AuthenticatedMinhasDividasRoute
   '/nova-divida': typeof AuthenticatedNovaDividaRoute
@@ -104,10 +124,13 @@ export interface FileRoutesByFullPath {
   '/receitas': typeof AuthenticatedReceitasRoute
   '/terceiros': typeof AuthenticatedTerceirosRoute
   '/transacoes': typeof AuthenticatedTransacoesRoute
+  '/contatos/$id': typeof AuthenticatedContatosIdRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/carteira': typeof AuthenticatedCarteiraRoute
+  '/contatos': typeof AuthenticatedContatosRouteWithChildren
+  '/envelopes': typeof AuthenticatedEnvelopesRoute
   '/metas': typeof AuthenticatedMetasRoute
   '/minhas-dividas': typeof AuthenticatedMinhasDividasRoute
   '/nova-divida': typeof AuthenticatedNovaDividaRoute
@@ -118,12 +141,15 @@ export interface FileRoutesByTo {
   '/terceiros': typeof AuthenticatedTerceirosRoute
   '/transacoes': typeof AuthenticatedTransacoesRoute
   '/': typeof AuthenticatedIndexRoute
+  '/contatos/$id': typeof AuthenticatedContatosIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/carteira': typeof AuthenticatedCarteiraRoute
+  '/_authenticated/contatos': typeof AuthenticatedContatosRouteWithChildren
+  '/_authenticated/envelopes': typeof AuthenticatedEnvelopesRoute
   '/_authenticated/metas': typeof AuthenticatedMetasRoute
   '/_authenticated/minhas-dividas': typeof AuthenticatedMinhasDividasRoute
   '/_authenticated/nova-divida': typeof AuthenticatedNovaDividaRoute
@@ -134,6 +160,7 @@ export interface FileRoutesById {
   '/_authenticated/terceiros': typeof AuthenticatedTerceirosRoute
   '/_authenticated/transacoes': typeof AuthenticatedTransacoesRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/contatos/$id': typeof AuthenticatedContatosIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -141,6 +168,8 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/carteira'
+    | '/contatos'
+    | '/envelopes'
     | '/metas'
     | '/minhas-dividas'
     | '/nova-divida'
@@ -150,10 +179,13 @@ export interface FileRouteTypes {
     | '/receitas'
     | '/terceiros'
     | '/transacoes'
+    | '/contatos/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
     | '/carteira'
+    | '/contatos'
+    | '/envelopes'
     | '/metas'
     | '/minhas-dividas'
     | '/nova-divida'
@@ -164,11 +196,14 @@ export interface FileRouteTypes {
     | '/terceiros'
     | '/transacoes'
     | '/'
+    | '/contatos/$id'
   id:
     | '__root__'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/carteira'
+    | '/_authenticated/contatos'
+    | '/_authenticated/envelopes'
     | '/_authenticated/metas'
     | '/_authenticated/minhas-dividas'
     | '/_authenticated/nova-divida'
@@ -179,6 +214,7 @@ export interface FileRouteTypes {
     | '/_authenticated/terceiros'
     | '/_authenticated/transacoes'
     | '/_authenticated/'
+    | '/_authenticated/contatos/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -272,6 +308,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMetasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/envelopes': {
+      id: '/_authenticated/envelopes'
+      path: '/envelopes'
+      fullPath: '/envelopes'
+      preLoaderRoute: typeof AuthenticatedEnvelopesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/contatos': {
+      id: '/_authenticated/contatos'
+      path: '/contatos'
+      fullPath: '/contatos'
+      preLoaderRoute: typeof AuthenticatedContatosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/carteira': {
       id: '/_authenticated/carteira'
       path: '/carteira'
@@ -279,11 +329,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCarteiraRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/contatos/$id': {
+      id: '/_authenticated/contatos/$id'
+      path: '/$id'
+      fullPath: '/contatos/$id'
+      preLoaderRoute: typeof AuthenticatedContatosIdRouteImport
+      parentRoute: typeof AuthenticatedContatosRoute
+    }
   }
 }
 
+interface AuthenticatedContatosRouteChildren {
+  AuthenticatedContatosIdRoute: typeof AuthenticatedContatosIdRoute
+}
+
+const AuthenticatedContatosRouteChildren: AuthenticatedContatosRouteChildren = {
+  AuthenticatedContatosIdRoute: AuthenticatedContatosIdRoute,
+}
+
+const AuthenticatedContatosRouteWithChildren =
+  AuthenticatedContatosRoute._addFileChildren(
+    AuthenticatedContatosRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedCarteiraRoute: typeof AuthenticatedCarteiraRoute
+  AuthenticatedContatosRoute: typeof AuthenticatedContatosRouteWithChildren
+  AuthenticatedEnvelopesRoute: typeof AuthenticatedEnvelopesRoute
   AuthenticatedMetasRoute: typeof AuthenticatedMetasRoute
   AuthenticatedMinhasDividasRoute: typeof AuthenticatedMinhasDividasRoute
   AuthenticatedNovaDividaRoute: typeof AuthenticatedNovaDividaRoute
@@ -298,6 +370,8 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCarteiraRoute: AuthenticatedCarteiraRoute,
+  AuthenticatedContatosRoute: AuthenticatedContatosRouteWithChildren,
+  AuthenticatedEnvelopesRoute: AuthenticatedEnvelopesRoute,
   AuthenticatedMetasRoute: AuthenticatedMetasRoute,
   AuthenticatedMinhasDividasRoute: AuthenticatedMinhasDividasRoute,
   AuthenticatedNovaDividaRoute: AuthenticatedNovaDividaRoute,

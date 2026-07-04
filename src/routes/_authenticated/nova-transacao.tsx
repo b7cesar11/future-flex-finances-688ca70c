@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { ArrowLeft, Pin } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { useFinance, type TxKind, type PaymentStatus } from "@/lib/finance-store";
+import { useFinance, formatBRLFull, type TxKind, type PaymentStatus } from "@/lib/finance-store";
 
 type Search = { kind?: TxKind };
 

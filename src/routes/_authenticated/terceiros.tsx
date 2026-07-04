@@ -104,10 +104,20 @@ function Terceiros() {
 
       <div className="mt-5 space-y-4">
         {groups.map((g) => (
-          <section key={g.name} className="rounded-3xl bg-card p-4 shadow-card ring-1 ring-border/50">
+          <section key={`${g.personId ?? g.name}`} className="rounded-3xl bg-card p-4 shadow-card ring-1 ring-border/50">
             <div className="mb-3 flex items-center justify-between">
               <div className="min-w-0">
-                <p className="truncate text-base font-semibold text-foreground">{g.name}</p>
+                {g.personId ? (
+                  <Link
+                    to="/contatos/$id"
+                    params={{ id: g.personId }}
+                    className="truncate text-base font-semibold text-foreground underline-offset-2 hover:underline"
+                  >
+                    {g.name}
+                  </Link>
+                ) : (
+                  <p className="truncate text-base font-semibold text-foreground">{g.name}</p>
+                )}
                 <p className="text-[11px] text-muted-foreground">{g.items.length} lançamento(s)</p>
               </div>
               <div className="text-right">

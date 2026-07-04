@@ -510,6 +510,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       if (!user.user) throw new Error("Não autenticado");
       const { error } = await (supabase as any).from("third_party_financials").insert({
         user_id: user.user.id,
+        person_id: t.personId ?? null,
         person_name: t.personName,
         type: t.type,
         amount: t.amount,
@@ -541,6 +542,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       if (patch.amount !== undefined) row.amount = patch.amount;
       if (patch.dueDate !== undefined) row.due_date = patch.dueDate;
       if (patch.personName !== undefined) row.person_name = patch.personName;
+      if (patch.personId !== undefined) row.person_id = patch.personId;
       if (patch.notes !== undefined) row.notes = patch.notes;
       if (patch.installmentsLeft !== undefined) row.installments_left = patch.installmentsLeft;
       const { error } = await (supabase as any)

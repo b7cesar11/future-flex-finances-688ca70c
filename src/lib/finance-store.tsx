@@ -853,12 +853,17 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   });
 
   const deletePersonM = useMutation({
+    // Fase 11: excluir pessoa é sempre soft delete (active=false), preservando histórico.
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from("people").delete().eq("id", id);
+      const { error } = await (supabase as any)
+        .from("people")
+        .update({ active: false })
+        .eq("id", id);
       if (error) throw error;
     },
-    onSuccess: invalidatePeople,
+    onSuccess: () => bust("pessoa_desativada"),
   });
+
 
   // ============ Envelopes ============
   const invalidateEnvelopes = () => {

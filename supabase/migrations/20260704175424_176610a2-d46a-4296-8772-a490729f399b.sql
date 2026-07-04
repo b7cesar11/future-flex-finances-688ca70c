@@ -1,0 +1,30 @@
+REVOKE EXECUTE ON FUNCTION public.pagar_parcela(uuid) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.estornar_parcela(uuid) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.adiantar_parcelas(uuid[]) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.encerrar_parcelamento(uuid, text, numeric) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.criar_compra_parcelada(text, numeric, integer, date, text, uuid, uuid, uuid, uuid, integer) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.pagar_fatura(uuid) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.estornar_fatura(uuid) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.pay_debt_installment(uuid) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.pay_debt_with_amount(uuid, numeric) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.revert_debt_payment(uuid) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.wipe_user_data() FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.get_or_create_invoice(uuid, date) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.atualizar_ciclo_faturas() FROM PUBLIC, anon;
+
+GRANT EXECUTE ON FUNCTION public.pagar_parcela(uuid) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.estornar_parcela(uuid) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.adiantar_parcelas(uuid[]) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.encerrar_parcelamento(uuid, text, numeric) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.criar_compra_parcelada(text, numeric, integer, date, text, uuid, uuid, uuid, uuid, integer) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.pagar_fatura(uuid) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.estornar_fatura(uuid) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.pay_debt_installment(uuid) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.pay_debt_with_amount(uuid, numeric) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.revert_debt_payment(uuid) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.wipe_user_data() TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.get_or_create_invoice(uuid, date) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.atualizar_ciclo_faturas() TO authenticated, service_role;
+
+REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.handle_new_user() TO service_role;

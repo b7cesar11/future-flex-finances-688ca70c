@@ -61,6 +61,7 @@ function Dashboard() {
     caixinhasTotal,
     pendentesMesTotal,
     livreParaGastar,
+    envelopesCommitted,
   } = useFinance();
   const { range, isInRange } = usePeriod();
 
@@ -154,7 +155,11 @@ function Dashboard() {
         <p className="mt-2 text-[11px] opacity-85">
           Saldo <strong>{formatBRL(saldoReal)}</strong> − pendentes do mês{" "}
           <strong>{formatBRL(pendentesMesTotal)}</strong> − caixinhas{" "}
-          <strong>{formatBRL(caixinhasTotal)}</strong>
+          <strong>{formatBRL(caixinhasTotal)}</strong> − envelopes{" "}
+          <strong>{formatBRL(envelopesCommitted)}</strong>
+        </p>
+        <p className="mt-1 text-[11px] font-semibold opacity-90">
+          Comprometido em envelopes: {formatBRL(envelopesCommitted)}
         </p>
         {livreParaGastar < 0 && (
           <p className="mt-2 rounded-xl bg-black/25 px-2.5 py-1.5 text-[11px] font-semibold">

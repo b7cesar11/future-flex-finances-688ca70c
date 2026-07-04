@@ -22,7 +22,6 @@ function NovoTerceiros() {
 
   const [type, setType] = useState<ThirdPartyType>("emprestei_dinheiro");
   const [personId, setPersonId] = useState<string>("");
-  const [personName, setPersonName] = useState("");
   const [amount, setAmount] = useState("");
   const [dueDate, setDueDate] = useState(today);
   const [isInstallment, setIsInstallment] = useState(false);
@@ -33,14 +32,18 @@ function NovoTerceiros() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const nomeFinal = personId ? (pessoas.find((p) => p.id === personId)?.name ?? "") : personName;
-    if (!nomeFinal || !amount || saving) return;
+    const pessoa = pessoas.find((p) => p.id === personId);
+    if (!pessoa) {
+      setError("Selecione uma pessoa do Hub de Contatos");
+      return;
+    }
+    if (!amount || saving) return;
     setSaving(true);
     setError(null);
     try {
       await addThirdParty({
-        personId: personId || null,
-        personName: nomeFinal,
+        personId: pessoa.id,
+        personName: pessoa.name,
         type,
         amount: parseFloat(amount.replace(",", ".")),
         dueDate: dueDate || null,

@@ -304,13 +304,19 @@ function Transacoes() {
                           {restantesQtd === 1 ? "" : "s"} restante{restantesQtd === 1 ? "" : "s"}
                         </p>
                       </div>
-                      <p className="text-sm font-semibold tabular-nums text-destructive">
-                        {formatBRLFull(g.restanteValor)}
-                      </p>
+                      <div className="shrink-0 text-right">
+                        <p className="text-base font-bold tabular-nums text-destructive">
+                          {formatBRLFull(g.restanteValor)}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                          de um total de {formatBRLFull(g.totalOriginal)}
+                        </p>
+                      </div>
                     </div>
                     <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
                       Ver parcelas →
                     </p>
+
                   </button>
                 </li>
               );

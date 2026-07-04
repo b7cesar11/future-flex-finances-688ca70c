@@ -98,11 +98,18 @@ export interface Envelope {
   committed: number; // max(0, remaining) — o que ainda está reservado
 }
 
+export type ThirdPartyDirection = "a_pagar" | "a_receber";
+export type PaymentMethod = "conta" | "cartao_credito" | "sem_transacao";
+
 export interface ThirdParty {
   id: string;
   personId: string | null;
   personName: string;
   type: ThirdPartyType;
+  direction: ThirdPartyDirection;
+  paymentMethod: PaymentMethod;
+  creditCardId: string | null;
+  purchaseGroupId: string | null;
   amount: number;
   dueDate: string | null;
   isInstallment: boolean;
@@ -120,6 +127,30 @@ export interface IncomeSource {
   accountId: string | null;
   lastReceivedMonth: string | null;
 }
+
+export interface CreditCard {
+  id: string;
+  name: string;
+  closingDay: number;
+  dueDay: number;
+  paymentAccountId: string | null;
+  creditLimit: number | null;
+  active: boolean;
+}
+
+export type InvoiceStatus = "futura" | "aberta" | "fechada" | "paga";
+
+export interface CreditCardInvoice {
+  id: string;
+  creditCardId: string;
+  referenceMonth: string;
+  closingDate: string;
+  dueDate: string;
+  status: InvoiceStatus;
+  paidAt: string | null;
+  total: number; // soma das parcelas
+}
+
 
 export const initialCategorias: Category[] = [
   { id: "moradia", nome: "Moradia", emoji: "🏠", cor: "#60a5fa" },

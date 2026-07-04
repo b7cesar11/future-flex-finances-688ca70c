@@ -23,6 +23,9 @@ export interface Debt {
   dueDay: number | null;
   isVariable: boolean;
   statusThisMonth: PaymentStatus;
+  commitmentGroupId: string | null;
+  /** ID da parcela do mês atual em `transactions` (para pagar/estornar via RPC unificada) */
+  currentInstallmentTxId: string | null;
 }
 
 export interface Account {
@@ -1074,18 +1077,51 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
 
 
   const value = useMemo<FinanceState>(() => {
-    const dividas: Debt[] = (debtsQ.data ?? []).map((r: any) => ({
-      id: r.id,
-      nome: r.name,
-      valorParcela: Number(r.monthly_installment),
-      parcelasRestantes: r.remaining_installments,
-      parcelasTotais: r.total_installments,
-      tipo: r.type as DebtType,
-      category: (r.category ?? (r.is_variable ? "variavel" : "parcelada")) as DebtCategory,
-      dueDay: r.due_day ?? null,
-      isVariable: r.is_variable ?? false,
-      statusThisMonth: (r.status_this_month ?? "pendente") as PaymentStatus,
-    }));
+    const txs = (transactionsQ.data ?? []) as any[];
+    const dividas: Debt[] = (debtsQ.data ?? []).map((r: any) => {
+      const groupId = r.commitment_group_id ?? null;
+      const installments = groupId
+        ? txs.filter((t) => t.commitment_group_id === groupId)
+        : [];
+      const parcelasTotais = installments.length || r.total_installments;
+      const parcelasRestantes = installments.length
+        ? installments.filter((t) => !t.paid_at).length
+        : r.remaining_installments;
+      const valorParcela = installments.length
+        ? Number(installments[0]?.amount ?? r.monthly_installment)
+        : Number(r.monthly_installment);
+
+      // Find current month's installment (due_date in current month, not paid)
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+      const currentMonthTx = installments.find((t) => {
+        if (!t.due_date) return false;
+        const d = new Date(t.due_date);
+        return d.getFullYear() === year && d.getMonth() === month;
+      });
+      const currentInstallmentTxId = currentMonthTx?.id ?? null;
+      const statusThisMonth = currentMonthTx
+        ? currentMonthTx.paid_at
+          ? "pago"
+          : "pendente"
+        : ((r.status_this_month ?? "pendente") as PaymentStatus);
+
+      return {
+        id: r.id,
+        nome: r.name,
+        valorParcela,
+        parcelasRestantes,
+        parcelasTotais,
+        tipo: r.type as DebtType,
+        category: (r.category ?? (r.is_variable ? "variavel" : "parcelada")) as DebtCategory,
+        dueDay: r.due_day ?? null,
+        isVariable: r.is_variable ?? false,
+        statusThisMonth,
+        commitmentGroupId: groupId,
+        currentInstallmentTxId,
+      };
+    });
     const transacoes: Transaction[] = (transactionsQ.data ?? []).map((r: any) => ({
       id: r.id,
       kind: r.type as TxKind,

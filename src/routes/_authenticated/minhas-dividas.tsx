@@ -61,9 +61,8 @@ function MinhasDividas() {
   const {
     dividas,
     contas,
-    payDebtInstallment,
-    payDebtWithAmount,
-    revertDebtPayment,
+    pagarParcela,
+    estornarParcela,
     updateDebtInstallment,
     deleteDebt,
   } = useFinance();
@@ -88,10 +87,10 @@ function MinhasDividas() {
   };
 
   const confirmVariable = async () => {
-    if (!variableModal) return;
+    if (!variableModal?.currentInstallmentTxId) return;
     const amount = parseFloat(variableAmount.replace(",", "."));
     if (!(amount > 0)) return;
-    await payDebtWithAmount(variableModal.id, amount, variableAccount || null);
+    await pagarParcela(variableModal.currentInstallmentTxId);
     setVariableModal(null);
   };
 
@@ -142,12 +141,13 @@ function MinhasDividas() {
                     <PayCheckbox
                       paid={pago}
                       onToggle={async () => {
+                        if (!d.currentInstallmentTxId) return;
                         if (pago) {
-                          await revertDebtPayment(d.id);
+                          await estornarParcela(d.currentInstallmentTxId);
                         } else if (d.category === "variavel") {
                           openVariable(d);
                         } else {
-                          await payDebtWithAmount(d.id, d.valorParcela, contas[0]?.id ?? null);
+                          await pagarParcela(d.currentInstallmentTxId);
                         }
                       }}
                       ariaLabel="Alternar parcela paga"

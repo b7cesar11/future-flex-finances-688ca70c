@@ -614,6 +614,10 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         person_id: t.personId ?? null,
         person_name: t.personName,
         type: t.type,
+        direction: t.direction,
+        payment_method: t.paymentMethod,
+        credit_card_id: t.creditCardId ?? null,
+        purchase_group_id: t.purchaseGroupId ?? null,
         amount: t.amount,
         due_date: t.dueDate,
         is_installment: t.isInstallment,
@@ -623,8 +627,9 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       });
       if (error) throw error;
     },
-    onSuccess: invalidateAll,
+    onSuccess: () => bust("terceiro_criado"),
   });
+
 
   const setThirdPartyStatusM = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: PaymentStatus }) => {

@@ -15,11 +15,11 @@ export const MAPA_DE_IMPACTO = {
   transacao_removida: ["transactions", "accounts", "budget_envelopes", "credit_card_invoices"],
   transacao_status_alterado: ["transactions", "accounts", "budget_envelopes", "credit_card_invoices"],
 
-  // ---- Parcelas de cartão / compras parceladas ----
-  parcela_paga: ["transactions", "accounts", "credit_card_invoices"],
-  parcela_estornada: ["transactions", "accounts", "credit_card_invoices"],
-  parcelas_adiantadas: ["transactions", "accounts", "credit_card_invoices"],
-  parcelamento_encerrado: ["transactions", "accounts", "credit_card_invoices"],
+  // ---- Parcelas de cartão / compras parceladas / dívidas ----
+  parcela_paga: ["transactions", "accounts", "credit_card_invoices", "debts"],
+  parcela_estornada: ["transactions", "accounts", "credit_card_invoices", "debts"],
+  parcelas_adiantadas: ["transactions", "accounts", "credit_card_invoices", "debts"],
+  parcelamento_encerrado: ["transactions", "accounts", "credit_card_invoices", "debts"],
   compra_parcelada_criada: ["transactions", "credit_card_invoices", "third_party_financials"],
 
   // ---- Faturas de cartão ----

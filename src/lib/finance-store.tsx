@@ -1014,6 +1014,10 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       personId: r.person_id ?? null,
       personName: r.person_id ? (pessoasById.get(r.person_id) ?? r.person_name) : r.person_name,
       type: r.type as ThirdPartyType,
+      direction: (r.direction ?? "a_receber") as ThirdPartyDirection,
+      paymentMethod: (r.payment_method ?? "conta") as PaymentMethod,
+      creditCardId: r.credit_card_id ?? null,
+      purchaseGroupId: r.purchase_group_id ?? null,
       amount: Number(r.amount),
       dueDate: r.due_date,
       isInstallment: r.is_installment,
@@ -1021,6 +1025,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       status: r.status as PaymentStatus,
       notes: r.notes,
     }));
+
 
     // ===== Envelopes com spent do mês corrente =====
     const envelopes: Envelope[] = (envelopesQ.data ?? []).map((r: any) => {

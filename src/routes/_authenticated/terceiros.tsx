@@ -30,7 +30,8 @@ function signedAmount(t: ThirdParty) {
 }
 
 function Terceiros() {
-  const { terceiros, setThirdPartyStatus, updateThirdParty, deleteThirdParty } = useFinance();
+  const { terceiros, cartoes, setThirdPartyStatus, updateThirdParty, deleteThirdParty } = useFinance();
+  const cartaoNome = (id: string | null) => (id ? cartoes.find((c) => c.id === id)?.name : null);
   const [confirmDel, setConfirmDel] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState("");

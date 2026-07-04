@@ -465,6 +465,7 @@ export type Database = {
           id: string
           installments_left: number
           is_installment: boolean
+          nome_cartao_terceiro: string | null
           notes: string | null
           payment_method: Database["public"]["Enums"]["payment_method_type"]
           person_id: string | null
@@ -484,6 +485,7 @@ export type Database = {
           id?: string
           installments_left?: number
           is_installment?: boolean
+          nome_cartao_terceiro?: string | null
           notes?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method_type"]
           person_id?: string | null
@@ -503,6 +505,7 @@ export type Database = {
           id?: string
           installments_left?: number
           is_installment?: boolean
+          nome_cartao_terceiro?: string | null
           notes?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method_type"]
           person_id?: string | null
@@ -662,20 +665,36 @@ export type Database = {
     Functions: {
       adiantar_parcelas: { Args: { _tx_ids: string[] }; Returns: string }
       atualizar_ciclo_faturas: { Args: never; Returns: undefined }
-      criar_compra_parcelada: {
-        Args: {
-          _account_id?: string
-          _amount_total: number
-          _category: string
-          _credit_card_id?: string
-          _description: string
-          _envelope_id?: string
-          _first_due_date: string
-          _installments: number
-          _person_id?: string
-        }
-        Returns: string
-      }
+      criar_compra_parcelada:
+        | {
+            Args: {
+              _account_id?: string
+              _amount_total: number
+              _category: string
+              _credit_card_id?: string
+              _description: string
+              _envelope_id?: string
+              _first_due_date: string
+              _installments: number
+              _person_id?: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              _account_id?: string
+              _amount_total: number
+              _category: string
+              _credit_card_id?: string
+              _description: string
+              _envelope_id?: string
+              _first_due_date: string
+              _installments: number
+              _parcelas_ja_pagas?: number
+              _person_id?: string
+            }
+            Returns: string
+          }
       encerrar_parcelamento: {
         Args: { _custom_amount?: number; _group_id: string; _modo: string }
         Returns: undefined
@@ -710,7 +729,11 @@ export type Database = {
       debt_type: "Cartão de Crédito" | "Empréstimo" | "Financiamento"
       income_status: "recebido" | "pendente"
       invoice_status: "futura" | "aberta" | "fechada" | "paga"
-      payment_method_type: "conta" | "cartao_credito" | "dinheiro"
+      payment_method_type:
+        | "conta"
+        | "cartao_credito"
+        | "dinheiro"
+        | "cartao_terceiro"
       payment_status: "pago" | "pendente" | "atrasado"
       person_type: "contato" | "empresa" | "familia"
       third_party_direction: "a_pagar" | "a_receber"
@@ -856,7 +879,12 @@ export const Constants = {
       debt_type: ["Cartão de Crédito", "Empréstimo", "Financiamento"],
       income_status: ["recebido", "pendente"],
       invoice_status: ["futura", "aberta", "fechada", "paga"],
-      payment_method_type: ["conta", "cartao_credito", "dinheiro"],
+      payment_method_type: [
+        "conta",
+        "cartao_credito",
+        "dinheiro",
+        "cartao_terceiro",
+      ],
       payment_status: ["pago", "pendente", "atrasado"],
       person_type: ["contato", "empresa", "familia"],
       third_party_direction: ["a_pagar", "a_receber"],

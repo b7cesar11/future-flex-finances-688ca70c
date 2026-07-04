@@ -199,6 +199,17 @@ function Terceiros() {
                           >
                             {formatBRLFull(t.amount)}
                           </p>
+                          {t.purchaseGroupId && (
+                            <button
+                              type="button"
+                              aria-label="Ver parcelas"
+                              title="Ver parcelas"
+                              onClick={() => setOpenGroup(t.purchaseGroupId!)}
+                              className="text-primary hover:text-primary/80"
+                            >
+                              <ListOrdered className="h-3.5 w-3.5" />
+                            </button>
+                          )}
                           <button
                             type="button"
                             aria-label="Editar"

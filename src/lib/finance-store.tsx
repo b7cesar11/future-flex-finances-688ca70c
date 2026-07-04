@@ -706,6 +706,105 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     onSuccess: invalidateGoals,
   });
 
+  // ============ People ============
+  const invalidatePeople = () => {
+    qc.invalidateQueries({ queryKey: ["people"] });
+    qc.invalidateQueries({ queryKey: ["third_party_financials"] });
+  };
+
+  const addPersonM = useMutation({
+    mutationFn: async (p: {
+      name: string;
+      type?: PersonType;
+      avatarUrl?: string | null;
+      notes?: string | null;
+    }) => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) throw new Error("Não autenticado");
+      const { error } = await (supabase as any).from("people").insert({
+        user_id: user.user.id,
+        name: p.name,
+        type: p.type ?? "contato",
+        avatar_url: p.avatarUrl ?? null,
+        notes: p.notes ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: invalidatePeople,
+  });
+
+  const updatePersonM = useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: Partial<Person> }) => {
+      const row: any = {};
+      if (patch.name !== undefined) row.name = patch.name;
+      if (patch.type !== undefined) row.type = patch.type;
+      if (patch.avatarUrl !== undefined) row.avatar_url = patch.avatarUrl;
+      if (patch.notes !== undefined) row.notes = patch.notes;
+      const { error } = await (supabase as any).from("people").update(row).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: invalidatePeople,
+  });
+
+  const deletePersonM = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).from("people").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: invalidatePeople,
+  });
+
+  // ============ Envelopes ============
+  const invalidateEnvelopes = () => {
+    qc.invalidateQueries({ queryKey: ["budget_envelopes"] });
+    qc.invalidateQueries({ queryKey: ["transactions"] });
+  };
+
+  const addEnvelopeM = useMutation({
+    mutationFn: async (e: {
+      name: string;
+      monthlyLimit: number;
+      emoji?: string;
+      cor?: string;
+    }) => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) throw new Error("Não autenticado");
+      const { error } = await (supabase as any).from("budget_envelopes").insert({
+        user_id: user.user.id,
+        name: e.name,
+        monthly_limit: e.monthlyLimit,
+        emoji: e.emoji ?? "📦",
+        color: e.cor ?? "bg-primary/20 text-primary",
+      });
+      if (error) throw error;
+    },
+    onSuccess: invalidateEnvelopes,
+  });
+
+  const updateEnvelopeM = useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: Partial<Envelope> }) => {
+      const row: any = {};
+      if (patch.name !== undefined) row.name = patch.name;
+      if (patch.monthlyLimit !== undefined) row.monthly_limit = patch.monthlyLimit;
+      if (patch.emoji !== undefined) row.emoji = patch.emoji;
+      if (patch.cor !== undefined) row.color = patch.cor;
+      const { error } = await (supabase as any)
+        .from("budget_envelopes")
+        .update(row)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateEnvelopes,
+  });
+
+  const deleteEnvelopeM = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).from("budget_envelopes").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateEnvelopes,
+  });
+
   const wipeM = useMutation({
     mutationFn: async () => {
       const { error } = await (supabase as any).rpc("wipe_user_data");

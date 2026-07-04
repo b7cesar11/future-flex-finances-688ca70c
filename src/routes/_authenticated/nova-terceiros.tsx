@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { ArrowLeft, UserPlus } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useFinance, type ThirdPartyType } from "@/lib/finance-store";
 

@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { CreditCard as CardIcon, Plus, User } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { ParcelasList } from "@/components/ParcelasList";
 import { formatBRLFull, useFinance, type CreditCardInvoice } from "@/lib/finance-store";
 import {
   INSTALLMENT_STATUS_CLASS,

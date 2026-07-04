@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight, Pin, Trash2, Lock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pin, Trash2, Lock, User } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { PayCheckbox } from "@/components/PayCheckbox";
 import { OverdueBadge } from "@/components/OverdueBadge";
@@ -25,12 +25,13 @@ export const Route = createFileRoute("/_authenticated/transacoes")({
 });
 
 function Transacoes() {
-  const { transacoes, categorias, contas, setTransactionStatus, deleteTransaction } = useFinance();
+  const { transacoes, categorias, contas, pessoas, setTransactionStatus, deleteTransaction } = useFinance();
   const { range, isInRange } = usePeriod();
   const { label, goToNextMonth, goToPreviousMonth, canGoNext } = useMonthNavigator();
 
   const catMap = useMemo(() => new Map(categorias.map((c) => [c.id, c])), [categorias]);
   const contaMap = useMemo(() => new Map(contas.map((c) => [c.id, c])), [contas]);
+  const pessoaMap = useMemo(() => new Map(pessoas.map((p) => [p.id, p])), [pessoas]);
 
   const filtered = useMemo(
     () => transacoes.filter((t) => isInRange(t.data)).sort((a, b) => (a.data < b.data ? 1 : -1)),
@@ -66,13 +67,15 @@ function Transacoes() {
 
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
-  // Fase 11: Parcelamentos ativos (com ao menos uma parcela pendente)
+  // Gap 2: Parcelamentos ativos agrupados por pessoa (quando há personId)
+  // Estrutura: cada grupo tem groupId, descricao, personId, totalParcelas, pagas, restanteValor, totalOriginal, proximaData
   const parcelamentos = useMemo(() => {
     const map = new Map<
       string,
       {
         groupId: string;
         descricao: string;
+        personId: string | null;
         totalParcelas: number;
         pagas: number;
         restanteValor: number;
@@ -85,6 +88,7 @@ function Transacoes() {
       const cur = map.get(t.purchaseGroupId) ?? {
         groupId: t.purchaseGroupId,
         descricao: t.descricao || "Compra parcelada",
+        personId: t.personId ?? null,
         totalParcelas: t.installmentTotal ?? 0,
         pagas: 0,
         restanteValor: 0,
@@ -92,6 +96,7 @@ function Transacoes() {
         proximaData: null as string | null,
       };
       cur.descricao = t.descricao || cur.descricao;
+      if (t.personId && !cur.personId) cur.personId = t.personId;
       if (t.installmentTotal && t.installmentTotal > cur.totalParcelas)
         cur.totalParcelas = t.installmentTotal;
       cur.totalOriginal += t.valor;
@@ -107,10 +112,44 @@ function Transacoes() {
     return Array.from(map.values()).filter((g) => g.restanteValor > 0);
   }, [transacoes]);
 
+  // Gap 2: Agrupar parcelamentos por pessoa
+  // Parcelamentos sem personId ficam em grupo "Sem vínculo com pessoa"
+  const parcelamentosPorPessoa = useMemo(() => {
+    const pessoaGrupos = new Map<
+      string, // personId ou "__sem_pessoa__"
+      {
+        personId: string | null;
+        personName: string;
+        grupos: typeof parcelamentos;
+        totalRestante: number;
+      }
+    >();
+
+    for (const g of parcelamentos) {
+      const key = g.personId ?? "__sem_pessoa__";
+      if (!pessoaGrupos.has(key)) {
+        const pessoa = g.personId ? pessoaMap.get(g.personId) : null;
+        pessoaGrupos.set(key, {
+          personId: g.personId,
+          personName: pessoa?.name ?? (g.personId ? `Pessoa ${g.personId.slice(0, 6)}` : ""),
+          grupos: [],
+          totalRestante: 0,
+        });
+      }
+      const pg = pessoaGrupos.get(key)!;
+      pg.grupos.push(g);
+      pg.totalRestante += g.restanteValor;
+    }
+
+    // Ordenar: primeiro os sem pessoa, depois por nome
+    return Array.from(pessoaGrupos.values()).sort((a, b) => {
+      if (!a.personId && b.personId) return -1;
+      if (a.personId && !b.personId) return 1;
+      return a.personName.localeCompare(b.personName);
+    });
+  }, [parcelamentos, pessoaMap]);
 
   const [openGroup, setOpenGroup] = useState<string | null>(null);
-
-
 
   return (
     <AppShell title="Transações" subtitle="Lançamentos com vencimento e status">
@@ -213,7 +252,6 @@ function Transacoes() {
                             {t.descricao || cat?.nome}
                           </p>
                           {t.isFixed && <Pin className="h-3 w-3 shrink-0 text-accent" />}
-                          {/* Badge de status espelhando o helper installment_status() do banco */}
                           {(() => {
                             const st = installmentStatus(t.paidAt, t.dueDate ?? t.data);
                             return (
@@ -252,8 +290,6 @@ function Transacoes() {
                           {positivo ? "+" : "−"} {formatBRLFull(t.valor)}
                         </p>
                         {t.paidAt ? (
-                          // Fase 11: parcela paga não permite editar valor/data — só excluir se
-                          // for permitido pela regra do parcelamento. Aqui apenas indicamos bloqueio.
                           <span
                             aria-label="Editar bloqueado — parcela paga"
                             title="Editar valor/data bloqueado após pagamento"
@@ -281,47 +317,76 @@ function Transacoes() {
         })}
       </section>
 
+      {/* Gap 2: Parcelamentos ativos agrupados por pessoa */}
       {parcelamentos.length > 0 && (
         <section className="mt-6">
-          <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Parcelamentos ativos
           </h2>
-          <ul className="space-y-2">
-            {parcelamentos.map((g) => {
-              const restantesQtd = g.totalParcelas - g.pagas;
-              return (
-                <li key={g.groupId}>
-                  <button
-                    type="button"
-                    onClick={() => setOpenGroup(g.groupId)}
-                    className="w-full rounded-2xl bg-card p-3 text-left shadow-card hover:ring-1 hover:ring-primary/30"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-foreground">{g.descricao}</p>
-                        <p className="text-[11px] text-muted-foreground">
-                          {g.pagas}/{g.totalParcelas} pagas · {restantesQtd} parcela
-                          {restantesQtd === 1 ? "" : "s"} restante{restantesQtd === 1 ? "" : "s"}
-                        </p>
-                      </div>
-                      <div className="shrink-0 text-right">
-                        <p className="text-base font-bold tabular-nums text-destructive">
-                          {formatBRLFull(g.restanteValor)}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">
-                          de um total de {formatBRLFull(g.totalOriginal)}
-                        </p>
-                      </div>
+          <div className="space-y-4">
+            {parcelamentosPorPessoa.map((pg) => (
+              <div key={pg.personId ?? "__sem_pessoa__"}>
+                {/* Cabeçalho do grupo de pessoa (só aparece se houver pessoa vinculada) */}
+                {pg.personId && (
+                  <div className="mb-2 flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <User className="h-3.5 w-3.5 text-primary" />
+                      <span className="text-xs font-semibold text-primary">
+                        {pg.personName}
+                      </span>
                     </div>
-                    <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
-                      Ver parcelas →
-                    </p>
-
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
+                    <span className="text-[10px] font-semibold tabular-nums text-destructive">
+                      {formatBRLFull(pg.totalRestante)} restante
+                    </span>
+                  </div>
+                )}
+                <ul className={`space-y-2 ${pg.personId ? "pl-2 border-l-2 border-primary/20" : ""}`}>
+                  {pg.grupos.map((g) => {
+                    const restantesQtd = g.totalParcelas - g.pagas;
+                    return (
+                      <li key={g.groupId}>
+                        <button
+                          type="button"
+                          onClick={() => setOpenGroup(g.groupId)}
+                          className="w-full rounded-2xl bg-card p-3 text-left shadow-card hover:ring-1 hover:ring-primary/30"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-medium text-foreground">{g.descricao}</p>
+                              <p className="text-[11px] text-muted-foreground">
+                                {g.pagas}/{g.totalParcelas} pagas · {restantesQtd} parcela
+                                {restantesQtd === 1 ? "" : "s"} restante{restantesQtd === 1 ? "" : "s"}
+                              </p>
+                            </div>
+                            <div className="shrink-0 text-right">
+                              <p className="text-base font-bold tabular-nums text-destructive">
+                                {formatBRLFull(g.restanteValor)}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground">
+                                de {formatBRLFull(g.totalOriginal)}
+                              </p>
+                            </div>
+                          </div>
+                          {/* Barra de progresso */}
+                          {g.totalParcelas > 0 && (
+                            <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-border/40">
+                              <div
+                                className="h-full rounded-full bg-primary transition-all"
+                                style={{ width: `${(g.pagas / g.totalParcelas) * 100}%` }}
+                              />
+                            </div>
+                          )}
+                          <p className="mt-1.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                            Ver parcelas →
+                          </p>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+          </div>
         </section>
       )}
 

@@ -17,7 +17,7 @@ const tipos: { label: DebtType; icon: typeof CreditCard }[] = [
 ];
 
 function NovaDivida() {
-  const { addDebt } = useFinance();
+  const { criarDividaCompromisso } = useFinance();
   const navigate = useNavigate();
   const [nome, setNome] = useState("");
   const [valor, setValor] = useState("");
@@ -32,20 +32,33 @@ function NovaDivida() {
   const canSubmit =
     nome.trim() && Number(valor) > 0 && (isFixed || Number(parcelas) > 0);
 
+  // Calcula a primeira data de vencimento com base no dia escolhido
+  function calcFirstDueDate(): string {
+    const today = new Date();
+    const day = dueDay ? Number(dueDay) : 10;
+    const year = today.getFullYear();
+    const month = today.getMonth();
+    // Se o dia já passou neste mês, usa o próximo mês
+    const candidate = new Date(year, month, day);
+    if (candidate < today) {
+      candidate.setMonth(candidate.getMonth() + 1);
+    }
+    return candidate.toISOString().slice(0, 10);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!canSubmit || saving) return;
     setSaving(true);
     setError(null);
     try {
-      await addDebt({
+      await criarDividaCompromisso({
         nome: nome.trim(),
-        valorParcela: Number(valor.replace(",", ".")),
-        parcelasRestantes: isFixed ? 0 : Number(parcelas),
         tipo,
+        valorParcela: Number(valor.replace(",", ".")),
+        parcelas: isFixed ? 1 : Number(parcelas),
+        firstDueDate: calcFirstDueDate(),
         category,
-        dueDay: dueDay ? Number(dueDay) : null,
-        isVariable: category === "variavel",
       });
       navigate({ to: "/minhas-dividas" });
     } catch (err: any) {

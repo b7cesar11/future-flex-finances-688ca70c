@@ -11,6 +11,7 @@ import {
   useFinance,
   type ThirdParty,
   type ThirdPartyType,
+  type Transaction,
 } from "@/lib/finance-store";
 
 export const Route = createFileRoute("/_authenticated/terceiros")({
@@ -24,15 +25,54 @@ const TYPE_LABEL: Record<ThirdPartyType, string> = {
   devo_a_terceiro: "Devo",
 };
 
-// items where "sign" = +1 => vão me pagar; -1 => eu devo
-function signedAmount(t: ThirdParty) {
+/**
+ * Calcula o valor pendente real de um ThirdParty.
+ * - Se tiver purchaseGroupId: soma apenas as parcelas não pagas (paid_at IS NULL)
+ * - Se não tiver (lançamento avulso): usa t.amount quando status !== "pago"
+ */
+function pendingAmount(t: ThirdParty, transacoes: Transaction[]): number {
+  if (t.status === "pago") return 0;
+
+  if (t.purchaseGroupId) {
+    // Soma parcelas não pagas do grupo
+    const unpaid = transacoes
+      .filter(
+        (tx) =>
+          tx.purchaseGroupId === t.purchaseGroupId &&
+          tx.paidAt === null
+      )
+      .reduce((s, tx) => s + tx.valor, 0);
+    return unpaid;
+  }
+
+  return t.amount;
+}
+
+/** Sinal: +1 = terceiro me deve; -1 = eu devo ao terceiro */
+function signedPending(t: ThirdParty, transacoes: Transaction[]): number {
   const sign = t.type === "devo_a_terceiro" ? -1 : 1;
-  return sign * (t.status === "pago" ? 0 : t.amount);
+  return sign * pendingAmount(t, transacoes);
+}
+
+/** Informações de progresso para lançamentos parcelados */
+function installmentProgress(
+  t: ThirdParty,
+  transacoes: Transaction[]
+): { total: number; paid: number } | null {
+  if (!t.purchaseGroupId) return null;
+  const parcelas = transacoes.filter(
+    (tx) => tx.purchaseGroupId === t.purchaseGroupId
+  );
+  if (parcelas.length === 0) return null;
+  const paid = parcelas.filter((tx) => tx.paidAt !== null).length;
+  return { total: parcelas.length, paid };
 }
 
 function Terceiros() {
-  const { terceiros, cartoes, setThirdPartyStatus, updateThirdParty, deleteThirdParty } = useFinance();
-  const cartaoNome = (id: string | null) => (id ? cartoes.find((c) => c.id === id)?.name : null);
+  const { terceiros, cartoes, transacoes, setThirdPartyStatus, updateThirdParty, deleteThirdParty } =
+    useFinance();
+  const cartaoNome = (id: string | null) =>
+    id ? cartoes.find((c) => c.id === id)?.name : null;
   const [confirmDel, setConfirmDel] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState("");
@@ -51,10 +91,11 @@ function Terceiros() {
         name: (v.items[0].personName || "—").trim(),
         personId: v.personId,
         items: v.items.sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? "")),
-        subtotal: v.items.reduce((s, t) => s + signedAmount(t), 0),
+        // Gap 1: subtotal usa parcelas não pagas, não o total
+        subtotal: v.items.reduce((s, t) => s + signedPending(t, transacoes), 0),
       }))
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [terceiros]);
+  }, [terceiros, transacoes]);
 
   const totalGeral = groups.reduce((s, g) => s + g.subtotal, 0);
 
@@ -108,7 +149,10 @@ function Terceiros() {
 
       <div className="mt-5 space-y-4">
         {groups.map((g) => (
-          <section key={`${g.personId ?? g.name}`} className="rounded-3xl bg-card p-4 shadow-card ring-1 ring-border/50">
+          <section
+            key={`${g.personId ?? g.name}`}
+            className="rounded-3xl bg-card p-4 shadow-card ring-1 ring-border/50"
+          >
             <div className="mb-3 flex items-center justify-between">
               <div className="min-w-0">
                 {g.personId ? (
@@ -125,7 +169,9 @@ function Terceiros() {
                 <p className="text-[11px] text-muted-foreground">{g.items.length} lançamento(s)</p>
               </div>
               <div className="text-right">
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Subtotal</p>
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  Saldo devedor
+                </p>
                 <p
                   className={`text-base font-bold tabular-nums ${
                     g.subtotal >= 0 ? "text-success" : "text-destructive"
@@ -141,6 +187,9 @@ function Terceiros() {
               {g.items.map((t) => {
                 const pago = t.status === "pago";
                 const isEdit = editing === t.id;
+                const progress = installmentProgress(t, transacoes);
+                const pendente = pendingAmount(t, transacoes);
+
                 return (
                   <li
                     key={t.id}
@@ -162,13 +211,32 @@ function Terceiros() {
                           <OverdueBadge dueDate={t.dueDate} status={t.status} />
                         </div>
                         {!isEdit && (
-                          <p className="text-[11px] text-muted-foreground">
-                            {t.dueDate
-                              ? `Venc ${new Date(t.dueDate + "T00:00:00").toLocaleDateString("pt-BR")}`
-                              : "Sem vencimento"}
-                            {t.isInstallment ? ` · ${t.installmentsLeft}x` : ""}
-                            {cartaoNome(t.creditCardId) ? ` · 💳 ${cartaoNome(t.creditCardId)}` : ""}
-                          </p>
+                          <>
+                            <p className="text-[11px] text-muted-foreground">
+                              {t.dueDate
+                                ? `Venc ${new Date(t.dueDate + "T00:00:00").toLocaleDateString("pt-BR")}`
+                                : "Sem vencimento"}
+                              {progress
+                                ? ` · ${progress.paid}/${progress.total} parcelas pagas`
+                                : t.isInstallment
+                                ? ` · ${t.installmentsLeft}x restantes`
+                                : ""}
+                              {cartaoNome(t.creditCardId)
+                                ? ` · 💳 ${cartaoNome(t.creditCardId)}`
+                                : ""}
+                            </p>
+                            {/* Barra de progresso para parcelamentos */}
+                            {progress && progress.total > 1 && (
+                              <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-border/40">
+                                <div
+                                  className="h-full rounded-full bg-primary transition-all"
+                                  style={{
+                                    width: `${(progress.paid / progress.total) * 100}%`,
+                                  }}
+                                />
+                              </div>
+                            )}
+                          </>
                         )}
                         {isEdit && (
                           <div className="mt-1 grid grid-cols-2 gap-2">
@@ -192,13 +260,21 @@ function Terceiros() {
                       </div>
                       {!isEdit ? (
                         <>
-                          <p
-                            className={`text-sm font-semibold tabular-nums ${
-                              !pago ? "" : "opacity-60"
-                            } ${t.type === "devo_a_terceiro" ? "text-destructive" : "text-success"}`}
-                          >
-                            {formatBRLFull(t.amount)}
-                          </p>
+                          <div className="text-right">
+                            {/* Gap 1: mostra valor pendente real (parcelas não pagas) */}
+                            <p
+                              className={`text-sm font-semibold tabular-nums ${
+                                !pago ? "" : "opacity-60"
+                              } ${t.type === "devo_a_terceiro" ? "text-destructive" : "text-success"}`}
+                            >
+                              {formatBRLFull(pago ? t.amount : pendente)}
+                            </p>
+                            {progress && !pago && pendente !== t.amount && (
+                              <p className="text-[10px] text-muted-foreground">
+                                de {formatBRLFull(t.amount)}
+                              </p>
+                            )}
+                          </div>
                           {t.purchaseGroupId && (
                             <button
                               type="button"

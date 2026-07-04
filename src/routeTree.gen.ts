@@ -22,6 +22,7 @@ import { Route as AuthenticatedMinhasDividasRouteImport } from './routes/_authen
 import { Route as AuthenticatedMetasRouteImport } from './routes/_authenticated/metas'
 import { Route as AuthenticatedEnvelopesRouteImport } from './routes/_authenticated/envelopes'
 import { Route as AuthenticatedContatosRouteImport } from './routes/_authenticated/contatos'
+import { Route as AuthenticatedCompromissosDoMesRouteImport } from './routes/_authenticated/compromissos-do-mes'
 import { Route as AuthenticatedCartoesRouteImport } from './routes/_authenticated/cartoes'
 import { Route as AuthenticatedCarteiraRouteImport } from './routes/_authenticated/carteira'
 import { Route as AuthenticatedContatosIdRouteImport } from './routes/_authenticated/contatos.$id'
@@ -92,6 +93,12 @@ const AuthenticatedContatosRoute = AuthenticatedContatosRouteImport.update({
   path: '/contatos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCompromissosDoMesRoute =
+  AuthenticatedCompromissosDoMesRouteImport.update({
+    id: '/compromissos-do-mes',
+    path: '/compromissos-do-mes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCartoesRoute = AuthenticatedCartoesRouteImport.update({
   id: '/cartoes',
   path: '/cartoes',
@@ -113,6 +120,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/carteira': typeof AuthenticatedCarteiraRoute
   '/cartoes': typeof AuthenticatedCartoesRoute
+  '/compromissos-do-mes': typeof AuthenticatedCompromissosDoMesRoute
   '/contatos': typeof AuthenticatedContatosRouteWithChildren
   '/envelopes': typeof AuthenticatedEnvelopesRoute
   '/metas': typeof AuthenticatedMetasRoute
@@ -129,6 +137,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/carteira': typeof AuthenticatedCarteiraRoute
   '/cartoes': typeof AuthenticatedCartoesRoute
+  '/compromissos-do-mes': typeof AuthenticatedCompromissosDoMesRoute
   '/contatos': typeof AuthenticatedContatosRouteWithChildren
   '/envelopes': typeof AuthenticatedEnvelopesRoute
   '/metas': typeof AuthenticatedMetasRoute
@@ -148,6 +157,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/carteira': typeof AuthenticatedCarteiraRoute
   '/_authenticated/cartoes': typeof AuthenticatedCartoesRoute
+  '/_authenticated/compromissos-do-mes': typeof AuthenticatedCompromissosDoMesRoute
   '/_authenticated/contatos': typeof AuthenticatedContatosRouteWithChildren
   '/_authenticated/envelopes': typeof AuthenticatedEnvelopesRoute
   '/_authenticated/metas': typeof AuthenticatedMetasRoute
@@ -168,6 +178,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/carteira'
     | '/cartoes'
+    | '/compromissos-do-mes'
     | '/contatos'
     | '/envelopes'
     | '/metas'
@@ -184,6 +195,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/carteira'
     | '/cartoes'
+    | '/compromissos-do-mes'
     | '/contatos'
     | '/envelopes'
     | '/metas'
@@ -202,6 +214,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/carteira'
     | '/_authenticated/cartoes'
+    | '/_authenticated/compromissos-do-mes'
     | '/_authenticated/contatos'
     | '/_authenticated/envelopes'
     | '/_authenticated/metas'
@@ -314,6 +327,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedContatosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/compromissos-do-mes': {
+      id: '/_authenticated/compromissos-do-mes'
+      path: '/compromissos-do-mes'
+      fullPath: '/compromissos-do-mes'
+      preLoaderRoute: typeof AuthenticatedCompromissosDoMesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/cartoes': {
       id: '/_authenticated/cartoes'
       path: '/cartoes'
@@ -354,6 +374,7 @@ const AuthenticatedContatosRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedCarteiraRoute: typeof AuthenticatedCarteiraRoute
   AuthenticatedCartoesRoute: typeof AuthenticatedCartoesRoute
+  AuthenticatedCompromissosDoMesRoute: typeof AuthenticatedCompromissosDoMesRoute
   AuthenticatedContatosRoute: typeof AuthenticatedContatosRouteWithChildren
   AuthenticatedEnvelopesRoute: typeof AuthenticatedEnvelopesRoute
   AuthenticatedMetasRoute: typeof AuthenticatedMetasRoute
@@ -370,6 +391,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCarteiraRoute: AuthenticatedCarteiraRoute,
   AuthenticatedCartoesRoute: AuthenticatedCartoesRoute,
+  AuthenticatedCompromissosDoMesRoute: AuthenticatedCompromissosDoMesRoute,
   AuthenticatedContatosRoute: AuthenticatedContatosRouteWithChildren,
   AuthenticatedEnvelopesRoute: AuthenticatedEnvelopesRoute,
   AuthenticatedMetasRoute: AuthenticatedMetasRoute,

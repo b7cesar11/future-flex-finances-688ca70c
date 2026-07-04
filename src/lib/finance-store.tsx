@@ -274,6 +274,14 @@ interface FinanceState {
     envelopeId?: string | null;
     parcelasJaPagas?: number;
   }) => Promise<string | null>;
+  criarDividaCompromisso: (input: {
+    nome: string;
+    tipo: DebtType;
+    valorParcela: number;
+    parcelas: number;
+    firstDueDate: string;
+    category?: DebtCategory;
+  }) => Promise<string | null>;
   pagarParcela: (txId: string) => Promise<void>;
   estornarParcela: (txId: string) => Promise<void>;
   adiantarParcelas: (txIds: string[]) => Promise<void>;
@@ -1012,6 +1020,31 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     onSuccess: () => bust("compra_parcelada_criada"),
   });
 
+  // ---- criarDividaCompromisso: cria debt + commitment_group + transactions ----
+  const criarDividaCompromissoM = useMutation({
+    mutationFn: async (input: {
+      nome: string;
+      tipo: DebtType;
+      valorParcela: number;
+      parcelas: number;
+      firstDueDate: string;
+      category?: DebtCategory;
+    }) => {
+      const cat: DebtCategory = input.category ?? "parcelada";
+      const { data, error } = await (supabase as any).rpc("criar_divida_compromisso", {
+        _name: input.nome,
+        _debt_type: input.tipo,
+        _monthly_installment: input.valorParcela,
+        _installments: input.parcelas,
+        _first_due_date: input.firstDueDate,
+        _category: cat,
+      });
+      if (error) throw error;
+      return (data as string) ?? null;
+    },
+    onSuccess: invalidateAll,
+  });
+
   // ---- Atomic RPCs (Fase 6/7) ----
   const pagarParcelaM = useMutation({
     mutationFn: async (txId: string) => {
@@ -1455,6 +1488,9 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       criarCompraParcelada: async (input) => {
         return await criarCompraParceladaM.mutateAsync(input);
       },
+      criarDividaCompromisso: async (input) => {
+        return await criarDividaCompromissoM.mutateAsync(input);
+      },
       pagarParcela: async (id) => {
         await pagarParcelaM.mutateAsync(id);
       },
@@ -1490,6 +1526,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     transactionsQ.isLoading,
     incomeQ.isLoading,
     addDebtM,
+    criarDividaCompromissoM,
     updateDebtInstallmentM,
     deleteDebtM,
     payDebtM,

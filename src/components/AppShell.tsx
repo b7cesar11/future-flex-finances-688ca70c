@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { LogOut, Menu, X, Users, CalendarClock, UserCircle2, PiggyBank, Package, Contact, CreditCard } from "lucide-react";
+import { LogOut, Menu, X, Users, CalendarClock, UserCircle2, PiggyBank, Package, Contact, CreditCard, LayoutList } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -79,6 +79,7 @@ export function AppShell({ title, subtitle, children, hidePeriodFilter }: AppShe
               <MenuLink to="/contatos" icon={<Contact className="h-4 w-4" />} label="Contatos" onClick={() => setMenu(false)} />
               <MenuLink to="/terceiros" icon={<Users className="h-4 w-4" />} label="Terceiros" onClick={() => setMenu(false)} />
               <MenuLink to="/cartoes" icon={<CreditCard className="h-4 w-4" />} label="Cartões de crédito" onClick={() => setMenu(false)} />
+              <MenuLink to="/compromissos-do-mes" icon={<LayoutList className="h-4 w-4" />} label="Compromissos do Mês" onClick={() => setMenu(false)} />
               <MenuLink to="/receitas" icon={<CalendarClock className="h-4 w-4" />} label="Fontes de renda" onClick={() => setMenu(false)} />
               <MenuLink to="/perfil" icon={<UserCircle2 className="h-4 w-4" />} label="Perfil" onClick={() => setMenu(false)} />
 

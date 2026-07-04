@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Users, Plus, Trash2, Pencil, Check, X } from "lucide-react";
+import { Users, Plus, Trash2, Pencil, Check, X, ListOrdered } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { PayCheckbox } from "@/components/PayCheckbox";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { OverdueBadge } from "@/components/OverdueBadge";
+import { ParcelasList } from "@/components/ParcelasList";
 import {
   formatBRLFull,
   useFinance,
@@ -36,6 +37,7 @@ function Terceiros() {
   const [editing, setEditing] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState("");
   const [editDue, setEditDue] = useState("");
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
 
   const groups = useMemo(() => {
     const map = new Map<string, { items: ThirdParty[]; personId: string | null }>();
@@ -197,6 +199,17 @@ function Terceiros() {
                           >
                             {formatBRLFull(t.amount)}
                           </p>
+                          {t.purchaseGroupId && (
+                            <button
+                              type="button"
+                              aria-label="Ver parcelas"
+                              title="Ver parcelas"
+                              onClick={() => setOpenGroup(t.purchaseGroupId!)}
+                              className="text-primary hover:text-primary/80"
+                            >
+                              <ListOrdered className="h-3.5 w-3.5" />
+                            </button>
+                          )}
                           <button
                             type="button"
                             aria-label="Editar"
@@ -261,6 +274,10 @@ function Terceiros() {
           if (confirmDel) await deleteThirdParty(confirmDel);
         }}
       />
+
+      {openGroup && (
+        <ParcelasList groupId={openGroup} onClose={() => setOpenGroup(null)} />
+      )}
     </AppShell>
   );
 }

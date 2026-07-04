@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight, Pin, Trash2, Lock, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pin, Trash2, Lock } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { PayCheckbox } from "@/components/PayCheckbox";
 import { OverdueBadge } from "@/components/OverdueBadge";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { ParcelasList } from "@/components/ParcelasList";
 import { formatBRLFull, useFinance } from "@/lib/finance-store";
 import { usePeriod, useMonthNavigator } from "@/lib/period-filter";
 import {
@@ -24,7 +25,7 @@ export const Route = createFileRoute("/_authenticated/transacoes")({
 });
 
 function Transacoes() {
-  const { transacoes, categorias, contas, setTransactionStatus, deleteTransaction, encerrarParcelamento } = useFinance();
+  const { transacoes, categorias, contas, setTransactionStatus, deleteTransaction } = useFinance();
   const { range, isInRange } = usePeriod();
   const { label, goToNextMonth, goToPreviousMonth, canGoNext } = useMonthNavigator();
 
@@ -103,13 +104,7 @@ function Transacoes() {
     return Array.from(map.values()).filter((g) => g.restanteValor > 0);
   }, [transacoes]);
 
-  const [quitarState, setQuitarState] = useState<
-    { groupId: string; descricao: string; sugerido: number } | null
-  >(null);
-  const [quitarValor, setQuitarValor] = useState("");
-  const [cancelarState, setCancelarState] = useState<
-    { groupId: string; descricao: string; restantes: number } | null
-  >(null);
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
 
 
 
@@ -291,50 +286,28 @@ function Transacoes() {
             {parcelamentos.map((g) => {
               const restantesQtd = g.totalParcelas - g.pagas;
               return (
-                <li key={g.groupId} className="rounded-2xl bg-card p-3 shadow-card">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-foreground">{g.descricao}</p>
-                      <p className="text-[11px] text-muted-foreground">
-                        {g.pagas}/{g.totalParcelas} pagas · {restantesQtd} parcela
-                        {restantesQtd === 1 ? "" : "s"} restante{restantesQtd === 1 ? "" : "s"}
+                <li key={g.groupId}>
+                  <button
+                    type="button"
+                    onClick={() => setOpenGroup(g.groupId)}
+                    className="w-full rounded-2xl bg-card p-3 text-left shadow-card hover:ring-1 hover:ring-primary/30"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-foreground">{g.descricao}</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {g.pagas}/{g.totalParcelas} pagas · {restantesQtd} parcela
+                          {restantesQtd === 1 ? "" : "s"} restante{restantesQtd === 1 ? "" : "s"}
+                        </p>
+                      </div>
+                      <p className="text-sm font-semibold tabular-nums text-destructive">
+                        {formatBRLFull(g.restanteValor)}
                       </p>
                     </div>
-                    <p className="text-sm font-semibold tabular-nums text-destructive">
-                      {formatBRLFull(g.restanteValor)}
+                    <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                      Ver parcelas →
                     </p>
-                  </div>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setQuitarState({
-                          groupId: g.groupId,
-                          descricao: g.descricao,
-                          sugerido: g.restanteValor,
-                        });
-                        setQuitarValor(g.restanteValor.toFixed(2).replace(".", ","));
-                      }}
-                      className="flex items-center justify-center gap-1.5 rounded-2xl bg-primary py-2.5 text-xs font-semibold text-primary-foreground"
-                    >
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      Quitar restante
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setCancelarState({
-                          groupId: g.groupId,
-                          descricao: g.descricao,
-                          restantes: restantesQtd,
-                        })
-                      }
-                      className="flex items-center justify-center gap-1.5 rounded-2xl bg-destructive/10 py-2.5 text-xs font-semibold text-destructive ring-1 ring-destructive/30"
-                    >
-                      <XCircle className="h-3.5 w-3.5" />
-                      Cancelar sem pagamento
-                    </button>
-                  </div>
+                  </button>
                 </li>
               );
             })}
@@ -354,94 +327,9 @@ function Transacoes() {
         }}
       />
 
-      {/* Quitar restante — permite valor final personalizado (desconto de quitação) */}
-      {quitarState && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <button
-            aria-label="Fechar"
-            className="absolute inset-0 bg-black/70"
-            onClick={() => setQuitarState(null)}
-          />
-          <div className="relative w-full max-w-sm rounded-3xl bg-card p-5 shadow-card">
-            <div className="mb-2 flex items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-primary">
-                <CheckCircle2 className="h-4 w-4" />
-              </span>
-              <h3 className="text-base font-semibold text-foreground">Quitar restante</h3>
-            </div>
-            <p className="mb-3 text-sm text-muted-foreground">
-              Vai encerrar <strong className="text-foreground">{quitarState.descricao}</strong>{" "}
-              gerando uma única saída no valor final abaixo. Ajuste se houve desconto de quitação.
-            </p>
-            <label className="mb-3 block">
-              <span className="mb-1 block text-[11px] uppercase text-muted-foreground">
-                Valor final (sugerido {formatBRLFull(quitarState.sugerido)})
-              </span>
-              <input
-                inputMode="decimal"
-                value={quitarValor}
-                onChange={(e) => setQuitarValor(e.target.value)}
-                className="w-full rounded-xl bg-surface-elevated px-3 py-2 text-sm outline-none ring-1 ring-border focus:ring-primary"
-              />
-            </label>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setQuitarState(null)}
-                className="flex-1 rounded-2xl bg-secondary py-2.5 text-sm font-semibold text-foreground"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={async () => {
-                  const parsed = Number(quitarValor.replace(/\./g, "").replace(",", "."));
-                  if (!isFinite(parsed) || parsed < 0) return;
-                  const gid = quitarState.groupId;
-                  setQuitarState(null);
-                  await encerrarParcelamento(gid, "quitar", parsed);
-                }}
-                className="flex-1 rounded-2xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground"
-              >
-                Confirmar quitação
-              </button>
-            </div>
-          </div>
-        </div>
+      {openGroup && (
+        <ParcelasList groupId={openGroup} onClose={() => setOpenGroup(null)} />
       )}
-
-      {/* Cancelar sem pagamento — confirmação extra com aviso destacado */}
-      <ConfirmDialog
-        open={!!cancelarState}
-        title="Cancelar parcelamento sem pagamento?"
-        destructive
-        confirmLabel="Cancelar parcelamento"
-        cancelLabel="Voltar"
-        requireType="CANCELAR"
-        description={
-          cancelarState && (
-            <div className="space-y-2">
-              <div className="flex items-start gap-2 rounded-xl bg-destructive/10 p-2.5 text-destructive">
-                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                <p className="text-xs">
-                  Esta ação <strong>remove {cancelarState.restantes} parcela
-                  {cancelarState.restantes === 1 ? "" : "s"} futura
-                  {cancelarState.restantes === 1 ? "" : "s"}</strong> de{" "}
-                  <strong>{cancelarState.descricao}</strong>. Nenhum pagamento será registrado.
-                </p>
-              </div>
-              <p className="text-xs">
-                As parcelas <strong>já pagas permanecem no histórico</strong> e no saldo da conta.
-                Não é possível desfazer.
-              </p>
-            </div>
-          )
-        }
-        onClose={() => setCancelarState(null)}
-        onConfirm={async () => {
-          if (cancelarState) await encerrarParcelamento(cancelarState.groupId, "cancelar");
-        }}
-      />
     </AppShell>
   );
 }

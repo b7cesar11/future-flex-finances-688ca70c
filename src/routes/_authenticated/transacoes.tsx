@@ -65,6 +65,54 @@ function Transacoes() {
 
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
+  // Fase 11: Parcelamentos ativos (com ao menos uma parcela pendente)
+  const parcelamentos = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        groupId: string;
+        descricao: string;
+        totalParcelas: number;
+        pagas: number;
+        restanteValor: number;
+        proximaData: string | null;
+      }
+    >();
+    for (const t of transacoes) {
+      if (!t.purchaseGroupId) continue;
+      const cur = map.get(t.purchaseGroupId) ?? {
+        groupId: t.purchaseGroupId,
+        descricao: t.descricao || "Compra parcelada",
+        totalParcelas: t.installmentTotal ?? 0,
+        pagas: 0,
+        restanteValor: 0,
+        proximaData: null as string | null,
+      };
+      cur.descricao = t.descricao || cur.descricao;
+      if (t.installmentTotal && t.installmentTotal > cur.totalParcelas)
+        cur.totalParcelas = t.installmentTotal;
+      if (t.status === "pago") {
+        cur.pagas += 1;
+      } else {
+        cur.restanteValor += t.valor;
+        const d = t.dueDate ?? t.data;
+        if (!cur.proximaData || d < cur.proximaData) cur.proximaData = d;
+      }
+      map.set(t.purchaseGroupId, cur);
+    }
+    return Array.from(map.values()).filter((g) => g.restanteValor > 0);
+  }, [transacoes]);
+
+  const [quitarState, setQuitarState] = useState<
+    { groupId: string; descricao: string; sugerido: number } | null
+  >(null);
+  const [quitarValor, setQuitarValor] = useState("");
+  const [cancelarState, setCancelarState] = useState<
+    { groupId: string; descricao: string; restantes: number } | null
+  >(null);
+
+
+
   return (
     <AppShell title="Transações" subtitle="Lançamentos com vencimento e status">
       {range.kind === "mensal" && (

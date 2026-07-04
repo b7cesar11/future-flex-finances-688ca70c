@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight, Pin, Trash2, Lock, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pin, Trash2, Lock } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { PayCheckbox } from "@/components/PayCheckbox";
 import { OverdueBadge } from "@/components/OverdueBadge";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { ParcelasList } from "@/components/ParcelasList";
 import { formatBRLFull, useFinance } from "@/lib/finance-store";
 import { usePeriod, useMonthNavigator } from "@/lib/period-filter";
 import {

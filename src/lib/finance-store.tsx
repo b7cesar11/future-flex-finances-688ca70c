@@ -207,6 +207,7 @@ interface FinanceState {
   addEnvelope: (e: { name: string; monthlyLimit: number; emoji?: string; cor?: string }) => Promise<void>;
   updateEnvelope: (id: string, patch: Partial<Envelope>) => Promise<void>;
   deleteEnvelope: (id: string) => Promise<void>;
+  addAccount: (a: { nome: string; tipo: AccountType; saldoInicial: number; emoji?: string; cor?: string }) => Promise<void>;
   wipeAllData: () => Promise<void>;
 }
 

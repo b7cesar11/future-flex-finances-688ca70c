@@ -1228,16 +1228,23 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     }));
 
     const pessoasById = new Map<string, string>();
-    const pessoas: Person[] = (peopleQ.data ?? []).map((r: any) => {
-      pessoasById.set(r.id, r.name);
-      return {
-        id: r.id,
-        name: r.name,
-        type: r.type as PersonType,
-        avatarUrl: r.avatar_url ?? null,
-        notes: r.notes ?? null,
-      };
-    });
+    const pessoas: Person[] = (peopleQ.data ?? [])
+      .filter((r: any) => r.active !== false) // soft-delete: oculta desativadas
+      .map((r: any) => {
+        pessoasById.set(r.id, r.name);
+        return {
+          id: r.id,
+          name: r.name,
+          type: r.type as PersonType,
+          avatarUrl: r.avatar_url ?? null,
+          notes: r.notes ?? null,
+        };
+      });
+    // Ainda alimenta o mapa com desativadas p/ resolver histórico
+    (peopleQ.data ?? [])
+      .filter((r: any) => r.active === false)
+      .forEach((r: any) => pessoasById.set(r.id, r.name));
+
 
     const terceiros: ThirdParty[] = (thirdPartyQ.data ?? []).map((r: any) => ({
       id: r.id,

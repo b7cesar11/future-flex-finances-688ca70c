@@ -104,13 +104,7 @@ function Transacoes() {
     return Array.from(map.values()).filter((g) => g.restanteValor > 0);
   }, [transacoes]);
 
-  const [quitarState, setQuitarState] = useState<
-    { groupId: string; descricao: string; sugerido: number } | null
-  >(null);
-  const [quitarValor, setQuitarValor] = useState("");
-  const [cancelarState, setCancelarState] = useState<
-    { groupId: string; descricao: string; restantes: number } | null
-  >(null);
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
 
 
 

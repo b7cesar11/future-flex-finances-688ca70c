@@ -30,7 +30,8 @@ function signedAmount(t: ThirdParty) {
 }
 
 function Terceiros() {
-  const { terceiros, setThirdPartyStatus, updateThirdParty, deleteThirdParty } = useFinance();
+  const { terceiros, cartoes, setThirdPartyStatus, updateThirdParty, deleteThirdParty } = useFinance();
+  const cartaoNome = (id: string | null) => (id ? cartoes.find((c) => c.id === id)?.name : null);
   const [confirmDel, setConfirmDel] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState("");
@@ -162,7 +163,8 @@ function Terceiros() {
                             {t.dueDate
                               ? `Venc ${new Date(t.dueDate + "T00:00:00").toLocaleDateString("pt-BR")}`
                               : "Sem vencimento"}
-                            {t.isInstallment ? ` · ${t.installmentsLeft}x restantes` : ""}
+                            {t.isInstallment ? ` · ${t.installmentsLeft}x` : ""}
+                            {cartaoNome(t.creditCardId) ? ` · 💳 ${cartaoNome(t.creditCardId)}` : ""}
                           </p>
                         )}
                         {isEdit && (

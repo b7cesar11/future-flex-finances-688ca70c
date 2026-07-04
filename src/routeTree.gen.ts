@@ -23,6 +23,7 @@ import { Route as AuthenticatedMinhasDividasRouteImport } from './routes/_authen
 import { Route as AuthenticatedMetasRouteImport } from './routes/_authenticated/metas'
 import { Route as AuthenticatedEnvelopesRouteImport } from './routes/_authenticated/envelopes'
 import { Route as AuthenticatedContatosRouteImport } from './routes/_authenticated/contatos'
+import { Route as AuthenticatedCartoesRouteImport } from './routes/_authenticated/cartoes'
 import { Route as AuthenticatedCarteiraRouteImport } from './routes/_authenticated/carteira'
 import { Route as AuthenticatedContatosIdRouteImport } from './routes/_authenticated/contatos.$id'
 
@@ -98,6 +99,11 @@ const AuthenticatedContatosRoute = AuthenticatedContatosRouteImport.update({
   path: '/contatos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCartoesRoute = AuthenticatedCartoesRouteImport.update({
+  id: '/cartoes',
+  path: '/cartoes',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCarteiraRoute = AuthenticatedCarteiraRouteImport.update({
   id: '/carteira',
   path: '/carteira',
@@ -113,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
   '/carteira': typeof AuthenticatedCarteiraRoute
+  '/cartoes': typeof AuthenticatedCartoesRoute
   '/contatos': typeof AuthenticatedContatosRouteWithChildren
   '/envelopes': typeof AuthenticatedEnvelopesRoute
   '/metas': typeof AuthenticatedMetasRoute
@@ -129,6 +136,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/carteira': typeof AuthenticatedCarteiraRoute
+  '/cartoes': typeof AuthenticatedCartoesRoute
   '/contatos': typeof AuthenticatedContatosRouteWithChildren
   '/envelopes': typeof AuthenticatedEnvelopesRoute
   '/metas': typeof AuthenticatedMetasRoute
@@ -148,6 +156,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/carteira': typeof AuthenticatedCarteiraRoute
+  '/_authenticated/cartoes': typeof AuthenticatedCartoesRoute
   '/_authenticated/contatos': typeof AuthenticatedContatosRouteWithChildren
   '/_authenticated/envelopes': typeof AuthenticatedEnvelopesRoute
   '/_authenticated/metas': typeof AuthenticatedMetasRoute
@@ -168,6 +177,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/carteira'
+    | '/cartoes'
     | '/contatos'
     | '/envelopes'
     | '/metas'
@@ -184,6 +194,7 @@ export interface FileRouteTypes {
   to:
     | '/auth'
     | '/carteira'
+    | '/cartoes'
     | '/contatos'
     | '/envelopes'
     | '/metas'
@@ -202,6 +213,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/carteira'
+    | '/_authenticated/cartoes'
     | '/_authenticated/contatos'
     | '/_authenticated/envelopes'
     | '/_authenticated/metas'
@@ -322,6 +334,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedContatosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/cartoes': {
+      id: '/_authenticated/cartoes'
+      path: '/cartoes'
+      fullPath: '/cartoes'
+      preLoaderRoute: typeof AuthenticatedCartoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/carteira': {
       id: '/_authenticated/carteira'
       path: '/carteira'
@@ -354,6 +373,7 @@ const AuthenticatedContatosRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedCarteiraRoute: typeof AuthenticatedCarteiraRoute
+  AuthenticatedCartoesRoute: typeof AuthenticatedCartoesRoute
   AuthenticatedContatosRoute: typeof AuthenticatedContatosRouteWithChildren
   AuthenticatedEnvelopesRoute: typeof AuthenticatedEnvelopesRoute
   AuthenticatedMetasRoute: typeof AuthenticatedMetasRoute
@@ -370,6 +390,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCarteiraRoute: AuthenticatedCarteiraRoute,
+  AuthenticatedCartoesRoute: AuthenticatedCartoesRoute,
   AuthenticatedContatosRoute: AuthenticatedContatosRouteWithChildren,
   AuthenticatedEnvelopesRoute: AuthenticatedEnvelopesRoute,
   AuthenticatedMetasRoute: AuthenticatedMetasRoute,

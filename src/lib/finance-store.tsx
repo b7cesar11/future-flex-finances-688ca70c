@@ -1,6 +1,8 @@
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidate, type AcaoImpacto } from "@/lib/invalidation";
+
 
 export type DebtType = "Cartão de Crédito" | "Empréstimo" | "Financiamento";
 export type DebtCategory = "parcelada" | "variavel" | "fixa" | "congelada";
@@ -53,7 +55,16 @@ export interface Transaction {
   contaId: string;
   envelopeId: string | null;
   personId: string | null;
+  creditCardId: string | null;
+  invoiceId: string | null;
+  purchaseGroupId: string | null;
+  installmentNumber: number | null;
+  installmentTotal: number | null;
+  paidAt: string | null;
+  originInvoiceId: string | null;
+  originTransactionId: string | null;
 }
+
 
 export interface SavingsGoal {
   id: string;
@@ -96,11 +107,18 @@ export interface Envelope {
   committed: number; // max(0, remaining) — o que ainda está reservado
 }
 
+export type ThirdPartyDirection = "a_pagar" | "a_receber";
+export type PaymentMethod = "conta" | "cartao_credito" | "sem_transacao";
+
 export interface ThirdParty {
   id: string;
   personId: string | null;
   personName: string;
   type: ThirdPartyType;
+  direction: ThirdPartyDirection;
+  paymentMethod: PaymentMethod;
+  creditCardId: string | null;
+  purchaseGroupId: string | null;
   amount: number;
   dueDate: string | null;
   isInstallment: boolean;
@@ -118,6 +136,30 @@ export interface IncomeSource {
   accountId: string | null;
   lastReceivedMonth: string | null;
 }
+
+export interface CreditCard {
+  id: string;
+  name: string;
+  closingDay: number;
+  dueDay: number;
+  paymentAccountId: string | null;
+  creditLimit: number | null;
+  active: boolean;
+}
+
+export type InvoiceStatus = "futura" | "aberta" | "fechada" | "paga";
+
+export interface CreditCardInvoice {
+  id: string;
+  creditCardId: string;
+  referenceMonth: string;
+  closingDate: string;
+  dueDate: string;
+  status: InvoiceStatus;
+  paidAt: string | null;
+  total: number; // soma das parcelas
+}
+
 
 export const initialCategorias: Category[] = [
   { id: "moradia", nome: "Moradia", emoji: "🏠", cor: "#60a5fa" },
@@ -145,11 +187,15 @@ interface FinanceState {
   pessoas: Person[];
   envelopes: Envelope[];
   envelopesCommitted: number; // soma do que ainda está reservado (limit - spent, floored at 0)
+  cartoes: CreditCard[];
+  faturas: CreditCardInvoice[];
+  faturasAbertasTotal: number; // total das faturas aberta/fechada do mês, excluindo itens com person_id
   saldoReal: number; // global wallet
   caixinhasTotal: number; // soma dos current_amount das metas
-  pendentesMesTotal: number; // despesas pendentes com dueDate no mês atual
-  livreParaGastar: number; // saldoReal - pendentesMesTotal - caixinhasTotal - envelopesCommitted
+  pendentesMesTotal: number; // despesas pendentes com dueDate no mês atual (sem itens person_id em cartão)
+  livreParaGastar: number; // fórmula completa (Fase 9)
   isLoading: boolean;
+
 
   // mutations
   addDebt: (debt: {
@@ -209,7 +255,29 @@ interface FinanceState {
   deleteEnvelope: (id: string) => Promise<void>;
   addAccount: (a: { nome: string; tipo: AccountType; saldoInicial: number; emoji?: string; cor?: string }) => Promise<void>;
   wipeAllData: () => Promise<void>;
+
+  // ---- Fase 6/7/8: cartões, faturas e atomic RPCs ----
+  addCreditCard: (c: { name: string; closingDay: number; dueDay: number; paymentAccountId?: string | null; creditLimit?: number | null }) => Promise<void>;
+  criarCompraParcelada: (input: {
+    description: string;
+    amountTotal: number;
+    installments: number;
+    firstDueDate: string;
+    category: string;
+    creditCardId?: string | null;
+    accountId?: string | null;
+    personId?: string | null;
+    envelopeId?: string | null;
+  }) => Promise<string | null>;
+  pagarParcela: (txId: string) => Promise<void>;
+  estornarParcela: (txId: string) => Promise<void>;
+  adiantarParcelas: (txIds: string[]) => Promise<void>;
+  encerrarParcelamento: (groupId: string, modo: "quitar" | "cancelar", customAmount?: number | null) => Promise<void>;
+  pagarFatura: (invoiceId: string) => Promise<void>;
+  estornarFatura: (invoiceId: string) => Promise<void>;
 }
+
+
 
 
 const FinanceContext = createContext<FinanceState | null>(null);
@@ -337,14 +405,42 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  const creditCardsQ = useQuery({
+    queryKey: ["credit_cards"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("credit_cards")
+        .select("*")
+        .order("name", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const invoicesQ = useQuery({
+    queryKey: ["credit_card_invoices"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("credit_card_invoices")
+        .select("*")
+        .order("reference_month", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+
+  // Todas as invalidações passam por este helper que consulta o MAPA_DE_IMPACTO
+  // (src/lib/invalidation.ts). Nenhuma tela deve invalidar cache manualmente.
+  const bust = (acao: AcaoImpacto) => invalidate(qc, acao);
   const invalidateAll = () => {
-    qc.invalidateQueries({ queryKey: ["transactions"] });
-    qc.invalidateQueries({ queryKey: ["debts"] });
-    qc.invalidateQueries({ queryKey: ["accounts"] });
-    qc.invalidateQueries({ queryKey: ["third_party_financials"] });
-    qc.invalidateQueries({ queryKey: ["income_sources"] });
-    qc.invalidateQueries({ queryKey: ["people"] });
-    qc.invalidateQueries({ queryKey: ["budget_envelopes"] });
+    // Fallback legado usado por mutations antigas — dispara todas as áreas afetadas
+    bust("transacao_editada");
+    bust("divida_editada");
+    bust("terceiro_editado");
+    bust("renda_editada");
+    bust("pessoa_editada");
+    bust("envelope_editado");
   };
 
   const addDebtM = useMutation({
@@ -518,6 +614,10 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         person_id: t.personId ?? null,
         person_name: t.personName,
         type: t.type,
+        direction: t.direction,
+        payment_method: t.paymentMethod,
+        credit_card_id: t.creditCardId ?? null,
+        purchase_group_id: t.purchaseGroupId ?? null,
         amount: t.amount,
         due_date: t.dueDate,
         is_installment: t.isInstallment,
@@ -527,8 +627,9 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       });
       if (error) throw error;
     },
-    onSuccess: invalidateAll,
+    onSuccess: () => bust("terceiro_criado"),
   });
+
 
   const setThirdPartyStatusM = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: PaymentStatus }) => {
@@ -752,12 +853,17 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   });
 
   const deletePersonM = useMutation({
+    // Fase 11: excluir pessoa é sempre soft delete (active=false), preservando histórico.
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from("people").delete().eq("id", id);
+      const { error } = await (supabase as any)
+        .from("people")
+        .update({ active: false })
+        .eq("id", id);
       if (error) throw error;
     },
-    onSuccess: invalidatePeople,
+    onSuccess: () => bust("pessoa_desativada"),
   });
+
 
   // ============ Envelopes ============
   const invalidateEnvelopes = () => {
@@ -841,10 +947,125 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       } as any);
       if (error) throw error;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["accounts"] });
-    },
+    onSuccess: () => bust("conta_criada"),
   });
+
+  // ---- Cartões de crédito ----
+  const addCreditCardM = useMutation({
+    mutationFn: async (c: {
+      name: string;
+      closingDay: number;
+      dueDay: number;
+      paymentAccountId?: string | null;
+      creditLimit?: number | null;
+    }) => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) throw new Error("Não autenticado");
+      const { error } = await (supabase as any).from("credit_cards").insert({
+        user_id: user.user.id,
+        name: c.name,
+        closing_day: c.closingDay,
+        due_day: c.dueDay,
+        payment_account_id: c.paymentAccountId ?? null,
+        credit_limit: c.creditLimit ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => bust("cartao_criado"),
+  });
+
+  // ---- Compra parcelada (Fase 3): materializa parcelas via RPC ----
+  const criarCompraParceladaM = useMutation({
+    mutationFn: async (input: {
+      description: string;
+      amountTotal: number;
+      installments: number;
+      firstDueDate: string;
+      category: string;
+      creditCardId?: string | null;
+      accountId?: string | null;
+      personId?: string | null;
+      envelopeId?: string | null;
+    }) => {
+      const { data, error } = await (supabase as any).rpc("criar_compra_parcelada", {
+        _description: input.description,
+        _amount_total: input.amountTotal,
+        _installments: input.installments,
+        _first_due_date: input.firstDueDate,
+        _category: input.category,
+        _credit_card_id: input.creditCardId ?? null,
+        _account_id: input.accountId ?? null,
+        _person_id: input.personId ?? null,
+        _envelope_id: input.envelopeId ?? null,
+      });
+      if (error) throw error;
+      return (data as string) ?? null;
+    },
+    onSuccess: () => bust("compra_parcelada_criada"),
+  });
+
+  // ---- Atomic RPCs (Fase 6/7) ----
+  const pagarParcelaM = useMutation({
+    mutationFn: async (txId: string) => {
+      const { error } = await (supabase as any).rpc("pagar_parcela", { _tx_id: txId });
+      if (error) throw error;
+    },
+    onSuccess: () => bust("parcela_paga"),
+  });
+
+  const estornarParcelaM = useMutation({
+    mutationFn: async (txId: string) => {
+      const { error } = await (supabase as any).rpc("estornar_parcela", { _tx_id: txId });
+      if (error) throw error;
+    },
+    onSuccess: () => bust("parcela_estornada"),
+  });
+
+  const adiantarParcelasM = useMutation({
+    mutationFn: async (txIds: string[]) => {
+      const { error } = await (supabase as any).rpc("adiantar_parcelas", { _tx_ids: txIds });
+      if (error) throw error;
+    },
+    onSuccess: () => bust("parcelas_adiantadas"),
+  });
+
+  const encerrarParcelamentoM = useMutation({
+    mutationFn: async ({
+      groupId,
+      modo,
+      customAmount,
+    }: {
+      groupId: string;
+      modo: "quitar" | "cancelar";
+      customAmount?: number | null;
+    }) => {
+      const { error } = await (supabase as any).rpc("encerrar_parcelamento", {
+        _group_id: groupId,
+        _modo: modo,
+        _custom_amount: customAmount ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => bust("parcelamento_encerrado"),
+  });
+
+  const pagarFaturaM = useMutation({
+    mutationFn: async (invoiceId: string) => {
+      const { error } = await (supabase as any).rpc("pagar_fatura", { _invoice_id: invoiceId });
+      if (error) throw error;
+    },
+    onSuccess: () => bust("fatura_paga"),
+  });
+
+  const estornarFaturaM = useMutation({
+    mutationFn: async (invoiceId: string) => {
+      const { error } = await (supabase as any).rpc("estornar_fatura", { _invoice_id: invoiceId });
+      if (error) throw error;
+    },
+    onSuccess: () => bust("fatura_estornada"),
+  });
+
+
 
 
   const value = useMemo<FinanceState>(() => {
@@ -873,7 +1094,16 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       contaId: r.account_id ?? "",
       envelopeId: r.envelope_id ?? null,
       personId: r.person_id ?? null,
+      creditCardId: r.credit_card_id ?? null,
+      invoiceId: r.invoice_id ?? null,
+      purchaseGroupId: r.purchase_group_id ?? null,
+      installmentNumber: r.installment_number ?? null,
+      installmentTotal: r.installment_total ?? null,
+      paidAt: r.paid_at ?? null,
+      originInvoiceId: r.origin_invoice_id ?? null,
+      originTransactionId: r.origin_transaction_id ?? null,
     }));
+
     const fontesRenda: IncomeSource[] = (incomeQ.data ?? []).map((r: any) => ({
       id: r.id,
       name: r.name,
@@ -924,19 +1154,70 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
 
     const caixinhasTotal = metas.reduce((s, m) => s + m.valorAtual, 0);
 
-    // Despesas pendentes com dueDate dentro do mês corrente
+    // ===== Cartões e faturas =====
+    const cartoes: CreditCard[] = (creditCardsQ.data ?? []).map((r: any) => ({
+      id: r.id,
+      name: r.name,
+      closingDay: r.closing_day,
+      dueDay: r.due_day,
+      paymentAccountId: r.payment_account_id ?? null,
+      creditLimit: r.credit_limit != null ? Number(r.credit_limit) : null,
+      active: r.active ?? true,
+    }));
+
+    const faturas: CreditCardInvoice[] = (invoicesQ.data ?? []).map((r: any) => {
+      const total = transacoes
+        .filter((t) => t.invoiceId === r.id)
+        .reduce((s, t) => s + t.valor, 0);
+      return {
+        id: r.id,
+        creditCardId: r.credit_card_id,
+        referenceMonth: r.reference_month,
+        closingDate: r.closing_date,
+        dueDate: r.due_date,
+        status: r.status as InvoiceStatus,
+        paidAt: r.paid_at ?? null,
+        total,
+      };
+    });
+
+    // ===== Fase 9: Fórmula "Livre para gastar" =====
+    // saldoReal
+    //   − parcelas/despesas a_pagar do mês (sem passar por fatura, sem person_id em cartão)
+    //   − total das faturas aberta/fechada do mês (excluindo itens com person_id — terceiros reembolsam)
+    //   − caixinhas
+    //   − envelopes committed
+    // direction=a_receber nunca entra em nada disso (third_party_financials não vira transação).
     const now = new Date();
     const mesInicio = new Date(now.getFullYear(), now.getMonth(), 1);
     const mesFim = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
     const pendentesMesTotal = transacoes
       .filter((t) => {
         if (t.kind !== "despesa" || t.status === "pago") return false;
+        // Itens de cartão de crédito são cobrados pela fatura (bloco abaixo).
+        if (t.invoiceId || t.creditCardId) return false;
         const ref = t.dueDate ?? t.data;
         if (!ref) return false;
         const d = new Date(ref + "T00:00:00");
         return d >= mesInicio && d <= mesFim;
       })
       .reduce((s, t) => s + t.valor, 0);
+
+    const faturasAbertasTotal = faturas
+      .filter((f) => f.status === "aberta" || f.status === "fechada")
+      .filter((f) => {
+        const d = new Date(f.dueDate + "T00:00:00");
+        return d >= mesInicio && d <= mesFim;
+      })
+      .reduce((sum, f) => {
+        // Exclui itens com person_id (terceiros reembolsam) — não pesa no meu Livre para Gastar
+        const meuTotal = transacoes
+          .filter((t) => t.invoiceId === f.id && !t.personId)
+          .reduce((s, t) => s + t.valor, 0);
+        return sum + meuTotal;
+      }, 0);
+
 
     const investimentos: Investment[] = (investmentsQ.data ?? []).map((r: any) => ({
       id: r.id,
@@ -947,22 +1228,33 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     }));
 
     const pessoasById = new Map<string, string>();
-    const pessoas: Person[] = (peopleQ.data ?? []).map((r: any) => {
-      pessoasById.set(r.id, r.name);
-      return {
-        id: r.id,
-        name: r.name,
-        type: r.type as PersonType,
-        avatarUrl: r.avatar_url ?? null,
-        notes: r.notes ?? null,
-      };
-    });
+    const pessoas: Person[] = (peopleQ.data ?? [])
+      .filter((r: any) => r.active !== false) // soft-delete: oculta desativadas
+      .map((r: any) => {
+        pessoasById.set(r.id, r.name);
+        return {
+          id: r.id,
+          name: r.name,
+          type: r.type as PersonType,
+          avatarUrl: r.avatar_url ?? null,
+          notes: r.notes ?? null,
+        };
+      });
+    // Ainda alimenta o mapa com desativadas p/ resolver histórico
+    (peopleQ.data ?? [])
+      .filter((r: any) => r.active === false)
+      .forEach((r: any) => pessoasById.set(r.id, r.name));
+
 
     const terceiros: ThirdParty[] = (thirdPartyQ.data ?? []).map((r: any) => ({
       id: r.id,
       personId: r.person_id ?? null,
       personName: r.person_id ? (pessoasById.get(r.person_id) ?? r.person_name) : r.person_name,
       type: r.type as ThirdPartyType,
+      direction: (r.direction ?? "a_receber") as ThirdPartyDirection,
+      paymentMethod: (r.payment_method ?? "conta") as PaymentMethod,
+      creditCardId: r.credit_card_id ?? null,
+      purchaseGroupId: r.purchase_group_id ?? null,
       amount: Number(r.amount),
       dueDate: r.due_date,
       isInstallment: r.is_installment,
@@ -970,6 +1262,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       status: r.status as PaymentStatus,
       notes: r.notes,
     }));
+
 
     // ===== Envelopes com spent do mês corrente =====
     const envelopes: Envelope[] = (envelopesQ.data ?? []).map((r: any) => {
@@ -998,7 +1291,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     });
 
     const envelopesCommitted = envelopes.reduce((s, e) => s + e.committed, 0);
-    const livreParaGastarAdj = saldoReal - pendentesMesTotal - caixinhasTotal - envelopesCommitted;
+    const livreParaGastarAdj =
+      saldoReal - pendentesMesTotal - faturasAbertasTotal - caixinhasTotal - envelopesCommitted;
 
     return {
       rendaMensal: Number(profileQ.data?.monthly_income ?? 0),
@@ -1014,10 +1308,14 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       pessoas,
       envelopes,
       envelopesCommitted,
+      cartoes,
+      faturas,
+      faturasAbertasTotal,
       saldoReal,
       caixinhasTotal,
       pendentesMesTotal,
       livreParaGastar: livreParaGastarAdj,
+
       isLoading:
 
         profileQ.isLoading ||
@@ -1109,9 +1407,33 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       addAccount: async (a) => {
         await addAccountM.mutateAsync(a);
       },
-
+      addCreditCard: async (c) => {
+        await addCreditCardM.mutateAsync(c);
+      },
+      criarCompraParcelada: async (input) => {
+        return await criarCompraParceladaM.mutateAsync(input);
+      },
+      pagarParcela: async (id) => {
+        await pagarParcelaM.mutateAsync(id);
+      },
+      estornarParcela: async (id) => {
+        await estornarParcelaM.mutateAsync(id);
+      },
+      adiantarParcelas: async (ids) => {
+        await adiantarParcelasM.mutateAsync(ids);
+      },
+      encerrarParcelamento: async (groupId, modo, customAmount) => {
+        await encerrarParcelamentoM.mutateAsync({ groupId, modo, customAmount });
+      },
+      pagarFatura: async (id) => {
+        await pagarFaturaM.mutateAsync(id);
+      },
+      estornarFatura: async (id) => {
+        await estornarFaturaM.mutateAsync(id);
+      },
     };
   }, [
+
     profileQ.data,
     accountsQ.data,
     debtsQ.data,

@@ -1,12 +1,17 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight, Pin, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pin, Trash2, Lock } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { PayCheckbox } from "@/components/PayCheckbox";
 import { OverdueBadge } from "@/components/OverdueBadge";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { formatBRLFull, useFinance } from "@/lib/finance-store";
 import { usePeriod, useMonthNavigator } from "@/lib/period-filter";
+import {
+  installmentStatus,
+  INSTALLMENT_STATUS_CLASS,
+  INSTALLMENT_STATUS_LABEL,
+} from "@/lib/installment-status";
 
 export const Route = createFileRoute("/_authenticated/transacoes")({
   head: () => ({
@@ -156,17 +161,29 @@ function Transacoes() {
                         {cat?.emoji ?? "✨"}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex flex-wrap items-center gap-1.5">
                           <p className="truncate text-sm font-medium text-foreground">
                             {t.descricao || cat?.nome}
                           </p>
-                          {t.isFixed && (
-                            <Pin className="h-3 w-3 shrink-0 text-accent" />
-                          )}
+                          {t.isFixed && <Pin className="h-3 w-3 shrink-0 text-accent" />}
+                          {/* Badge de status espelhando o helper installment_status() do banco */}
+                          {(() => {
+                            const st = installmentStatus(t.paidAt, t.dueDate ?? t.data);
+                            return (
+                              <span
+                                className={`rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase ${INSTALLMENT_STATUS_CLASS[st]}`}
+                              >
+                                {INSTALLMENT_STATUS_LABEL[st]}
+                              </span>
+                            );
+                          })()}
                           <OverdueBadge dueDate={t.dueDate ?? t.data} status={t.status} />
                         </div>
                         <p className="truncate text-[11px] text-muted-foreground">
                           {cat?.nome} · {conta?.nome ?? "—"}
+                          {t.installmentNumber && t.installmentTotal && (
+                            <> · {t.installmentNumber}/{t.installmentTotal}</>
+                          )}
                           {t.dueDate && t.dueDate !== t.data && (
                             <>
                               {" "}
@@ -187,14 +204,26 @@ function Transacoes() {
                         >
                           {positivo ? "+" : "−"} {formatBRLFull(t.valor)}
                         </p>
-                        <button
-                          type="button"
-                          aria-label="Excluir"
-                          onClick={() => setConfirmDelete(t.id)}
-                          className="text-muted-foreground hover:text-destructive"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </button>
+                        {t.paidAt ? (
+                          // Fase 11: parcela paga não permite editar valor/data — só excluir se
+                          // for permitido pela regra do parcelamento. Aqui apenas indicamos bloqueio.
+                          <span
+                            aria-label="Editar bloqueado — parcela paga"
+                            title="Editar valor/data bloqueado após pagamento"
+                            className="text-muted-foreground"
+                          >
+                            <Lock className="h-3 w-3" />
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            aria-label="Excluir"
+                            onClick={() => setConfirmDelete(t.id)}
+                            className="text-muted-foreground hover:text-destructive"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        )}
                       </div>
                     </li>
                   );
@@ -204,6 +233,7 @@ function Transacoes() {
           );
         })}
       </section>
+
 
       <ConfirmDialog
         open={!!confirmDelete}

@@ -840,6 +840,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       isFixed: r.is_fixed ?? false,
       categoriaId: r.category,
       contaId: r.account_id ?? "",
+      envelopeId: r.envelope_id ?? null,
     }));
     const fontesRenda: IncomeSource[] = (incomeQ.data ?? []).map((r: any) => ({
       id: r.id,

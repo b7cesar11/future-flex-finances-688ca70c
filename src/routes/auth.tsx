@@ -63,7 +63,7 @@ function AuthPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: window.location.origin + "/auth",
+          redirectTo: "https://future-flex-finances-688ca70c.vercel.app/auth",
         },
       });
       if (error) throw error;

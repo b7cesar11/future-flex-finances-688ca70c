@@ -1119,6 +1119,14 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
 
 
   const value = useMemo<FinanceState>(() => {
+    console.log("[Finance Diagnostic] Re-calculating state...");
+    console.log("[Finance Diagnostic] Queries status:", {
+      profile: profileQ.status,
+      accounts: accountsQ.status,
+      debts: debtsQ.status,
+      transactions: transactionsQ.status
+    });
+
     const txs = (transactionsQ.data ?? []) as any[];
     const dividas: Debt[] = (debtsQ.data ?? []).map((r: any) => {
       const groupId = r.commitment_group_id ?? null;

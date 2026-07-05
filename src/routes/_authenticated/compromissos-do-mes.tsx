@@ -11,6 +11,7 @@ import {
   Clock,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { PayCheckbox } from "@/components/PayCheckbox";
 import { formatBRLFull, useFinance } from "@/lib/finance-store";
 import { useMonthNavigator } from "@/lib/period-filter";
 
@@ -37,6 +38,7 @@ interface ItemCompromisso {
   dueDate: string | null;
   parcela?: string;
   pessoa?: string;
+  transactionId: string; // Adicionado para a RPC
 }
 
 interface GrupoOrigem {
@@ -92,7 +94,8 @@ function originBorder(tipo: OrigemTipo) {
 // Componente principal
 // ──────────────────────────────────────────────
 function CompromissosDoMes() {
-  const { transacoes, dividas, faturas, cartoes, pessoas } = useFinance();
+  const finance = useFinance();
+  const { transacoes, dividas, faturas, cartoes, pessoas } = finance;
   const { label, goToNextMonth, goToPreviousMonth, canGoNext, currentReferenceMonth } =
     useMonthNavigator();
 
@@ -126,13 +129,14 @@ function CompromissosDoMes() {
     for (const fatura of faturas) {
       if (!inMonth(fatura.dueDate)) continue;
       const nomeCartao = cartaoMap.get(fatura.creditCardId) ?? "Cartão";
-      const txsFatura = transacoes.filter(
-        (t) => t.invoiceId === fatura.id && t.kind === "despesa",
-      );
-      if (txsFatura.length === 0 && fatura.total === 0) continue;
-      const pago = fatura.status === "paga";
-      const itens: ItemCompromisso[] = txsFatura.map((t) => ({
-        id: t.id,
+          const txsFatura = transacoes.filter(
+            (t) => t.invoiceId === fatura.id && t.kind === "despesa",
+          );
+          if (txsFatura.length === 0 && fatura.total === 0) continue;
+          const pago = fatura.status === "paga";
+          const itens: ItemCompromisso[] = txsFatura.map((t) => ({
+            id: t.id,
+            transactionId: t.id,
         descricao: t.descricao,
         valor: t.valor,
         pago,
@@ -188,6 +192,7 @@ function CompromissosDoMes() {
       const pago = !!t.paidAt;
       const item: ItemCompromisso = {
         id: t.id,
+        transactionId: t.id,
         descricao: t.descricao,
         valor: t.valor,
         pago,
@@ -420,7 +425,13 @@ function GrupoCard({ grupo }: { grupo: GrupoOrigem }) {
               <span
                 className={`shrink-0 ${item.pago ? "text-emerald-400" : "text-muted-foreground/40"}`}
               >
-                <CheckCircle2 className="h-4 w-4" />
+                <PayCheckbox
+                  paid={item.pago}
+                  onToggle={async () => {
+                    await finance.alternarStatusTransacao(item.transactionId, item.pago ? "pendente" : "pago");
+                  }}
+                  size="sm"
+                />
               </span>
               <div className="min-w-0 flex-1">
                 <p

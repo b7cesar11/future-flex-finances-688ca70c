@@ -288,6 +288,7 @@ interface FinanceState {
   encerrarParcelamento: (groupId: string, modo: "quitar" | "cancelar", customAmount?: number | null) => Promise<void>;
   pagarFatura: (invoiceId: string) => Promise<void>;
   estornarFatura: (invoiceId: string) => Promise<void>;
+  alternarStatusTransacao: (transactionId: string, newStatus: PaymentStatus) => Promise<void>;
 }
 
 
@@ -1092,10 +1093,18 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
 
   const pagarFaturaM = useMutation({
     mutationFn: async (invoiceId: string) => {
-      const { error } = await (supabase as any).rpc("pagar_fatura", { _invoice_id: invoiceId });
+      const { error } = await supabase.rpc("pagar_fatura", { _invoice_id: invoiceId });
       if (error) throw error;
     },
     onSuccess: () => bust("fatura_paga"),
+  });
+
+  const alternarStatusTransacaoM = useMutation({
+    mutationFn: async ({ transactionId, newStatus }: { transactionId: string; newStatus: PaymentStatus }) => {
+      const { error } = await supabase.rpc("alternar_status_transacao", { _transaction_id: transactionId, _new_status: newStatus });
+      if (error) throw error;
+    },
+    onSuccess: () => bust("transacao_editada"),
   });
 
   const estornarFaturaM = useMutation({
@@ -1509,9 +1518,11 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       estornarFatura: async (id) => {
         await estornarFaturaM.mutateAsync(id);
       },
+      alternarStatusTransacao: async (transactionId, newStatus) => {
+        await alternarStatusTransacaoM.mutateAsync({ transactionId, newStatus });
+      },
     };
   }, [
-
     profileQ.data,
     accountsQ.data,
     debtsQ.data,
@@ -1543,6 +1554,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     setIncomeStatusM,
     deleteIncomeM,
     wipeM,
+    alternarStatusTransacaoM,
   ]);
 
   return <FinanceContext.Provider value={value}>{children}</FinanceContext.Provider>;

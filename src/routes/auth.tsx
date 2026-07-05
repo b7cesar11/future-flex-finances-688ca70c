@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Wallet, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
+// Removido lovable auth para corrigir 404 no Vercel
 
 export const Route = createFileRoute("/auth")({
   head: () => ({

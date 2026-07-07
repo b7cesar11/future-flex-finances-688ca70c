@@ -791,12 +791,6 @@ export type Database = {
       }
       pagar_fatura: { Args: { _invoice_id: string }; Returns: string }
       pagar_parcela: { Args: { _tx_id: string }; Returns: undefined }
-      pay_debt_installment: { Args: { _debt_id: string }; Returns: undefined }
-      pay_debt_with_amount: {
-        Args: { _amount: number; _debt_id: string }
-        Returns: undefined
-      }
-      revert_debt_payment: { Args: { _debt_id: string }; Returns: undefined }
       wipe_user_data: { Args: never; Returns: undefined }
     }
     Enums: {

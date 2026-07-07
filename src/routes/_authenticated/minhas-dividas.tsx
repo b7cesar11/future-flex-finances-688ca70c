@@ -12,12 +12,14 @@ import {
   Zap,
   Snowflake,
   Repeat,
+  ChevronRight,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { ProgressBar } from "@/components/ProgressBar";
-import { PayCheckbox } from "@/components/PayCheckbox";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { OverdueBadge } from "@/components/OverdueBadge";
+import { ParcelasList } from "@/components/ParcelasList";
+import { PayCheckbox } from "@/components/PayCheckbox";
 import {
   formatBRL,
   formatBRLFull,
@@ -74,6 +76,7 @@ function MinhasDividas() {
   const [variableModal, setVariableModal] = useState<Debt | null>(null);
   const [variableAmount, setVariableAmount] = useState("");
   const [variableAccount, setVariableAccount] = useState<string>("");
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
 
   const filtered = useMemo(() => dividas.filter((d) => catMatches(d, tab)), [dividas, tab]);
   const activeTotal = filtered
@@ -137,7 +140,16 @@ function MinhasDividas() {
             return (
               <li key={d.id} className="rounded-3xl bg-card p-4 shadow-card ring-1 ring-border/50">
                 <div className="flex items-start gap-3">
-                  {canPay && (
+                  {canPay && d.commitmentGroupId ? (
+                    <button
+                      type="button"
+                      onClick={() => setOpenGroup(d.commitmentGroupId!)}
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-secondary text-foreground transition-transform active:scale-95"
+                      aria-label="Ver parcelas"
+                    >
+                      <Icon className="h-5 w-5" />
+                    </button>
+                  ) : canPay ? (
                     <PayCheckbox
                       paid={pago}
                       onToggle={async () => {
@@ -152,11 +164,15 @@ function MinhasDividas() {
                       }}
                       ariaLabel="Alternar parcela paga"
                     />
+                  ) : (
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-secondary text-foreground">
+                      <Icon className="h-5 w-5" />
+                    </div>
                   )}
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-secondary text-foreground">
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0 flex-1">
+                  <div
+                    className={`min-w-0 flex-1${d.commitmentGroupId ? " cursor-pointer" : ""}`}
+                    onClick={d.commitmentGroupId ? () => setOpenGroup(d.commitmentGroupId) : undefined}
+                  >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
@@ -239,6 +255,9 @@ function MinhasDividas() {
                       </div>
                     )}
                   </div>
+                  {d.commitmentGroupId && (
+                    <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+                  )}
                 </div>
               </li>
             );
@@ -331,6 +350,14 @@ function MinhasDividas() {
             </div>
           </div>
         </div>
+      )}
+
+      {openGroup && (
+        <ParcelasList
+          groupId={openGroup}
+          groupType="commitment"
+          onClose={() => setOpenGroup(null)}
+        />
       )}
     </AppShell>
   );

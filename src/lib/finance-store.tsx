@@ -61,6 +61,7 @@ export interface Transaction {
   creditCardId: string | null;
   invoiceId: string | null;
   purchaseGroupId: string | null;
+  commitmentGroupId: string | null;
   installmentNumber: number | null;
   installmentTotal: number | null;
   paidAt: string | null;
@@ -213,9 +214,6 @@ interface FinanceState {
   }) => Promise<void>;
   updateDebtInstallment: (id: string, valorParcela: number) => Promise<void>;
   deleteDebt: (id: string) => Promise<void>;
-  payDebtInstallment: (id: string) => Promise<void>;
-  payDebtWithAmount: (id: string, amount: number, accountId?: string | null) => Promise<void>;
-  revertDebtPayment: (id: string) => Promise<void>;
   addTransaction: (tx: {
     kind: TxKind;
     descricao: string;
@@ -504,63 +502,6 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("debts").delete().eq("id", id);
       if (error) throw error;
-    },
-    onSuccess: invalidateAll,
-  });
-
-  const payDebtM = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).rpc("pay_debt_installment", { _debt_id: id });
-      if (error) throw error;
-    },
-    onSuccess: invalidateAll,
-  });
-
-  const revertDebtM = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).rpc("revert_debt_payment", { _debt_id: id });
-      if (error) throw error;
-    },
-    onSuccess: invalidateAll,
-  });
-
-  const payDebtWithAmountM = useMutation({
-    mutationFn: async ({
-      id,
-      amount,
-      accountId,
-    }: {
-      id: string;
-      amount: number;
-      accountId?: string | null;
-    }) => {
-      const { data: userRes } = await supabase.auth.getUser();
-      if (!userRes.user) throw new Error("Não autenticado");
-      const { data: debtRow, error: dErr } = await supabase
-        .from("debts")
-        .select("name")
-        .eq("id", id)
-        .maybeSingle();
-      if (dErr) throw dErr;
-      const { error: rpcErr } = await (supabase as any).rpc("pay_debt_with_amount", {
-        _debt_id: id,
-        _amount: amount,
-      });
-      if (rpcErr) throw rpcErr;
-      const today = new Date().toISOString().slice(0, 10);
-      const { error: txErr } = await supabase.from("transactions").insert({
-        user_id: userRes.user.id,
-        account_id: accountId ?? null,
-        amount,
-        type: "despesa",
-        category: "contas",
-        description: `Pagamento — ${debtRow?.name ?? "dívida"}`,
-        date: today,
-        due_date: today,
-        status: "pago",
-        is_fixed: false,
-      } as any);
-      if (txErr) throw txErr;
     },
     onSuccess: invalidateAll,
   });
@@ -1188,6 +1129,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       creditCardId: r.credit_card_id ?? null,
       invoiceId: r.invoice_id ?? null,
       purchaseGroupId: r.purchase_group_id ?? null,
+      commitmentGroupId: r.commitment_group_id ?? null,
       installmentNumber: r.installment_number ?? null,
       installmentTotal: r.installment_total ?? null,
       paidAt: r.paid_at ?? null,
@@ -1424,15 +1366,6 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       deleteDebt: async (id) => {
         await deleteDebtM.mutateAsync(id);
       },
-      payDebtInstallment: async (id) => {
-        await payDebtM.mutateAsync(id);
-      },
-      payDebtWithAmount: async (id, amount, accountId) => {
-        await payDebtWithAmountM.mutateAsync({ id, amount, accountId });
-      },
-      revertDebtPayment: async (id) => {
-        await revertDebtM.mutateAsync(id);
-      },
       addTransaction: async (t) => {
         await addTxM.mutateAsync(t);
       },
@@ -1548,9 +1481,6 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     criarDividaCompromissoM,
     updateDebtInstallmentM,
     deleteDebtM,
-    payDebtM,
-    payDebtWithAmountM,
-    revertDebtM,
     addTxM,
     setTxStatusM,
     deleteTxM,

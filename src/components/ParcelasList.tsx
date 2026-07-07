@@ -17,18 +17,24 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
  */
 export function ParcelasList({
   groupId,
+  groupType = "purchase",
   onClose,
 }: {
   groupId: string;
+  groupType?: "purchase" | "commitment";
   onClose: () => void;
 }) {
   const { transacoes, pessoas, pagarParcela, encerrarParcelamento } = useFinance();
   const parcelas = useMemo(
     () =>
       transacoes
-        .filter((t) => t.purchaseGroupId === groupId)
+        .filter((t) =>
+          groupType === "commitment"
+            ? t.commitmentGroupId === groupId
+            : t.purchaseGroupId === groupId,
+        )
         .sort((a, b) => (a.installmentNumber ?? 0) - (b.installmentNumber ?? 0)),
-    [transacoes, groupId],
+    [transacoes, groupId, groupType],
   );
 
   const [quitarOpen, setQuitarOpen] = useState(false);

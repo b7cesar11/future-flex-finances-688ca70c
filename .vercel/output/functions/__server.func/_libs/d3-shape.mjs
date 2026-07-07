@@ -816,6 +816,3 @@ function wiggle_default(series, order) {
 }
 //#endregion
 export { cross_default as C, area_default as D, bumpY as E, line_default as O, diamond_default as S, bumpX as T, Symbol as _, none_default as a, star_default as b, stepBefore as c, monotoneX as d, monotoneY as f, basis_default as g, basisClosed_default as h, stack_default as i, linear_default as k, step_default as l, basisOpen_default as m, silhouette_default as n, none_default$1 as o, linearClosed_default as p, expand_default as r, stepAfter as s, wiggle_default as t, natural_default as u, wye_default as v, circle_default as w, square_default as x, triangle_default as y };
-
-
-export { a, c, k, s, x, y }

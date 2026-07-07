@@ -1,0 +1,1 @@
+import{c as e}from"./useRouter-Dg84_hLv.js";import{t}from"./finance-store-jD0JRn2o.js";import{r as n}from"./index--vpS1-LX.js";var r=e(),i=()=>(0,r.jsx)(t,{children:(0,r.jsx)(n,{})});export{i as component};

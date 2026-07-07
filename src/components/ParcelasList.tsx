@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { X, Lock, CheckCircle2, XCircle, AlertTriangle, Loader2 } from "lucide-react";
+import { X, Lock, CircleCheck as CheckCircle2, Circle as XCircle, TriangleAlert as AlertTriangle, Loader as Loader2 } from "lucide-react";
 import { formatBRLFull, useFinance } from "@/lib/finance-store";
 import {
   installmentStatus,

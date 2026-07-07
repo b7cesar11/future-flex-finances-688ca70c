@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { ArrowLeft, Pin, UserPlus, CreditCard as CardIcon, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Pin, UserPlus, CreditCard as CardIcon, CircleCheck as CheckCircle2, TrendingDown, TrendingUp } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import {
   useFinance,
@@ -20,7 +20,7 @@ type Search = {
 
 export const Route = createFileRoute("/_authenticated/nova-transacao")({
   validateSearch: (s: Record<string, unknown>): Search => ({
-    kind: s.kind === "receita" ? "receita" : "despesa",
+    kind: s.kind === "receita" ? "receita" : s.kind === "despesa" ? "despesa" : undefined,
     terceiro: s.terceiro === true || s.terceiro === "1" || s.terceiro === "true",
     direction: s.direction === "a_pagar" ? "a_pagar" : s.direction === "a_receber" ? "a_receber" : undefined,
   }),
@@ -32,15 +32,54 @@ type Metodo = "conta" | "dinheiro" | "cartao" | "cartao_terceiro";
 type Relacao = "me_deve" | "eu_devo";
 
 function NovaTransacao() {
-  const { kind = "despesa", terceiro: terceiroInitial, direction: dirInitial } = useSearch({
+  const { kind, terceiro: terceiroInitial, direction: dirInitial } = useSearch({
     from: "/_authenticated/nova-transacao",
   });
+  const navigate = useNavigate();
+
+  // Phase 4: se kind não foi escolhido, mostrar seletor de tipo primeiro
+  if (!kind) {
+    return (
+      <div className="mx-auto max-w-md px-5 pt-8 pb-24">
+        <h1 className="text-xl font-bold text-foreground">O que você quer registrar?</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Escolha o tipo para continuar.</p>
+        <div className="mt-6 grid gap-3">
+          <button
+            type="button"
+            onClick={() => void navigate({ to: "/nova-transacao", search: { kind: "despesa" } })}
+            className="flex items-center gap-4 rounded-2xl bg-card p-5 text-left shadow-card transition-transform active:scale-[0.98] hover:ring-2 hover:ring-destructive/30"
+          >
+            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-destructive/15 text-destructive">
+              <TrendingDown className="h-6 w-6" />
+            </span>
+            <span className="flex-1">
+              <span className="block text-base font-semibold text-foreground">Despesa</span>
+              <span className="block text-xs text-muted-foreground">Um gasto que saiu ou vai sair</span>
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => void navigate({ to: "/nova-transacao", search: { kind: "receita" } })}
+            className="flex items-center gap-4 rounded-2xl bg-card p-5 text-left shadow-card transition-transform active:scale-[0.98] hover:ring-2 hover:ring-primary/30"
+          >
+            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/15 text-primary">
+              <TrendingUp className="h-6 w-6" />
+            </span>
+            <span className="flex-1">
+              <span className="block text-base font-semibold text-foreground">Receita</span>
+              <span className="block text-xs text-muted-foreground">Dinheiro que entrou</span>
+            </span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const {
     categorias, contas, envelopes, pessoas, cartoes, terceiros,
     addTransaction, criarCompraParcelada, addThirdParty,
     updateThirdParty, setThirdPartyStatus,
   } = useFinance();
-  const navigate = useNavigate();
   const today = new Date().toISOString().slice(0, 10);
 
   const [tipo, setTipo] = useState<TxKind>(kind);

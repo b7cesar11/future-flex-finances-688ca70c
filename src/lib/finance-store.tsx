@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { invalidate, type AcaoImpacto } from "@/lib/invalidation";
@@ -457,6 +457,21 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     bust("pessoa_editada");
     bust("envelope_editado");
   };
+
+  useEffect(() => {
+    const now = new Date();
+    (async () => {
+      try {
+        await (supabase as any).rpc("materializar_recorrentes", {
+          _year: now.getFullYear(),
+          _month: now.getMonth() + 1,
+        });
+        bust("transacao_editada");
+      } catch {
+        // best-effort
+      }
+    })();
+  }, []);
 
   const addDebtM = useMutation({
     mutationFn: async (d: {

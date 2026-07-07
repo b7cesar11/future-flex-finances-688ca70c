@@ -324,6 +324,38 @@ var ArrowUpRight = createLucideIcon("arrow-up-right", [["path", {
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var CalendarCheck = createLucideIcon("calendar-check", [
+	["path", {
+		d: "M8 2v4",
+		key: "1cmpym"
+	}],
+	["path", {
+		d: "M16 2v4",
+		key: "4m81vk"
+	}],
+	["rect", {
+		width: "18",
+		height: "18",
+		x: "3",
+		y: "4",
+		rx: "2",
+		key: "1hopcy"
+	}],
+	["path", {
+		d: "M3 10h18",
+		key: "8toen8"
+	}],
+	["path", {
+		d: "m9 16 2 2 4-4",
+		key: "19s6y9"
+	}]
+]);
+/**
+* @license lucide-react v0.575.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var CalendarClock = createLucideIcon("calendar-clock", [
 	["path", {
 		d: "M16 14v2.2l1.6 1",
@@ -1177,4 +1209,4 @@ var Zap = createLucideIcon("zap", [["path", {
 	key: "1xq2db"
 }]]);
 //#endregion
-export { Clock as A, ArrowLeftRight as B, ListOrdered as C, HandCoins as D, Landmark as E, Calendar as F, LoaderCircle as G, Activity as H, CalendarRange as I, CircleCheck as J, House as K, CalendarClock as L, ChevronRight as M, ChevronLeft as N, CreditCard as O, Check as P, ArrowUpRight as R, Loader as S, LayoutList as T, TriangleAlert as U, ArrowDownRight as V, Sparkles as W, CircleAlert as Y, Pencil as _, User as a, LogOut as b, TrendingDown as c, Snowflake as d, Repeat as f, Percent as g, PiggyBank as h, Users as i, Circle as j, Contact as k, Trash2 as l, Pin as m, X as n, UserPlus as o, Plus as p, CircleUserRound as q, Wallet as r, TrendingUp as s, Zap as t, Target as u, Package as v, ListChecks as w, Lock as x, Menu as y, ArrowLeft as z };
+export { Clock as A, ArrowLeft as B, ListOrdered as C, HandCoins as D, Landmark as E, Calendar as F, Sparkles as G, ArrowDownRight as H, CalendarRange as I, CircleUserRound as J, LoaderCircle as K, CalendarClock as L, ChevronRight as M, ChevronLeft as N, CreditCard as O, Check as P, CalendarCheck as R, Loader as S, LayoutList as T, Activity as U, ArrowLeftRight as V, TriangleAlert as W, CircleAlert as X, CircleCheck as Y, Pencil as _, User as a, LogOut as b, TrendingDown as c, Snowflake as d, Repeat as f, Percent as g, PiggyBank as h, Users as i, Circle as j, Contact as k, Trash2 as l, Pin as m, X as n, UserPlus as o, Plus as p, House as q, Wallet as r, TrendingUp as s, Zap as t, Target as u, Package as v, ListChecks as w, Lock as x, Menu as y, ArrowUpRight as z };

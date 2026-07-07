@@ -10,21 +10,7 @@ import {
   YAxis,
   Cell,
 } from "recharts";
-import {
-  Sparkles,
-  TrendingUp,
-  Wallet,
-  ArrowUpRight,
-  ArrowDownRight,
-  Percent,
-  PiggyBank,
-  Target,
-  AlertCircle,
-  Calendar,
-  Activity,
-  CalendarClock,
-  Users,
-} from "lucide-react";
+import { Sparkles, TrendingUp, Wallet, ArrowUpRight, ArrowDownRight, Percent, PiggyBank, Target, CircleAlert as AlertCircle, Calendar, Activity, CalendarClock, CalendarCheck, Users } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
@@ -233,6 +219,59 @@ function Dashboard() {
             </span>
           </Link>
         )}
+      </section>
+
+      {/* ============= RESUMO DO MÊS + GASTOS POR CATEGORIA ============= */}
+      <section className="mt-5 rounded-3xl bg-card p-5 shadow-card">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <CalendarCheck className="h-4 w-4 text-primary" />
+            <h2 className="text-base font-semibold text-foreground">Gastos por categoria</h2>
+          </div>
+          <Link to="/compromissos-do-mes" className="text-[11px] font-semibold text-primary hover:underline">
+            Ver compromissos →
+          </Link>
+        </div>
+        {(() => {
+          const byCat = new Map<string, number>();
+          for (const t of periodTx) {
+            if (t.kind !== "despesa") continue;
+            byCat.set(t.categoria, (byCat.get(t.categoria) ?? 0) + t.valor);
+          }
+          const catData = Array.from(byCat.entries())
+            .map(([name, value]) => ({ name, value }))
+            .sort((a, b) => b.value - a.value)
+            .slice(0, 6);
+          if (catData.length === 0) {
+            return (
+              <div className="rounded-2xl border border-dashed border-border p-5 text-center">
+                <p className="text-sm text-muted-foreground">Nenhuma despesa no período.</p>
+              </div>
+            );
+          }
+          const maxVal = Math.max(...catData.map((d) => d.value));
+          return (
+            <div className="space-y-2.5">
+              {catData.map((d) => {
+                const pct = maxVal > 0 ? Math.round((d.value / maxVal) * 100) : 0;
+                return (
+                  <div key={d.name} className="flex items-center gap-3">
+                    <span className="w-24 shrink-0 truncate text-xs text-muted-foreground">{d.name}</span>
+                    <div className="relative h-6 flex-1 overflow-hidden rounded-lg bg-secondary">
+                      <div
+                        className="absolute inset-y-0 left-0 rounded-lg bg-gradient-to-r from-primary/80 to-primary transition-all duration-500"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <span className="w-20 shrink-0 text-right text-xs font-semibold tabular-nums text-foreground">
+                      {formatBRL(d.value)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
       </section>
 
       {/* ============= PROJEÇÃO ATÉ A PRÓXIMA ENTRADA ============= */}

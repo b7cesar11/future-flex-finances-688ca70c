@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight, CreditCard, Users, Landmark, TrendingDown, CircleCheck as CheckCircle2, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight, CreditCard, Users, Landmark, TrendingDown, TrendingUp, CircleCheck as CheckCircle2, Clock } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { PayCheckbox } from "@/components/PayCheckbox";
 import { formatBRLFull, useFinance } from "@/lib/finance-store";
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_authenticated/compromissos-do-mes")({
 // ──────────────────────────────────────────────
 // Tipos internos
 // ──────────────────────────────────────────────
-type OrigemTipo = "cartao" | "terceiro" | "emprestimo" | "financiamento" | "parcelamento";
+type OrigemTipo = "cartao" | "terceiro" | "emprestimo" | "financiamento" | "parcelamento" | "receita";
 
 interface ItemCompromisso {
   id: string;
@@ -58,6 +58,7 @@ function originIcon(tipo: OrigemTipo) {
     case "emprestimo":    return <Landmark className="h-4 w-4" />;
     case "financiamento": return <Landmark className="h-4 w-4" />;
     case "parcelamento":  return <TrendingDown className="h-4 w-4" />;
+    case "receita":        return <TrendingUp className="h-4 w-4" />;
   }
 }
 
@@ -68,6 +69,7 @@ function originColor(tipo: OrigemTipo) {
     case "emprestimo":    return "bg-blue-500/15 text-blue-400";
     case "financiamento": return "bg-cyan-500/15 text-cyan-400";
     case "parcelamento":  return "bg-rose-500/15 text-rose-400";
+    case "receita":        return "bg-emerald-500/15 text-emerald-400";
   }
 }
 
@@ -78,6 +80,7 @@ function originBorder(tipo: OrigemTipo) {
     case "emprestimo":    return "border-blue-500/30";
     case "financiamento": return "border-cyan-500/30";
     case "parcelamento":  return "border-rose-500/30";
+    case "receita":        return "border-emerald-500/30";
   }
 }
 
@@ -188,7 +191,13 @@ function CompromissosDoMes() {
       const gid = t.purchaseGroupId ?? t.commitmentGroupId;
       if (!gid) continue;
       if (t.invoiceId) continue; // cartão já tratado
-      if (t.kind !== "despesa") continue;
+      if (t.kind === "despesa") {
+        // despesa — agrupar normalmente
+      } else if (t.kind === "receita") {
+        // receita — agrupar em grupo próprio
+      } else {
+        continue;
+      }
       if (!inMonth(t.dueDate ?? t.data)) continue;
       // Skip frozen commitment groups
       if (t.commitmentGroupId && frozenGroupIds.has(t.commitmentGroupId)) continue;
@@ -208,7 +217,16 @@ function CompromissosDoMes() {
         pessoa: t.personId ? pessoaMap.get(t.personId) : undefined,
       };
 
-      if (t.personId) {
+      if (t.kind === "receita") {
+        // Agrupar receitas em grupo único
+        if (!byGroup.has("__receitas__")) {
+          byGroup.set("__receitas__", { tipo: "receita" as const, titulo: "Receitas", itens: [], total: 0, totalPago: 0 });
+        }
+        const g = byGroup.get("__receitas__")!;
+        g.itens.push(item);
+        g.total += t.valor;
+        if (pago) g.totalPago += t.valor;
+      } else if (t.personId) {
         // Agrupar por pessoa
         const pid = t.personId;
         if (!byPessoa.has(pid)) {
@@ -286,11 +304,12 @@ function CompromissosDoMes() {
   // Ordenação: terceiros primeiro, depois por tipo, depois por total desc
   const gruposOrdenados = useMemo(() => {
     const order: Record<OrigemTipo, number> = {
-      cartao: 0,
-      terceiro: 1,
-      emprestimo: 2,
-      financiamento: 3,
-      parcelamento: 4,
+      receita: 0,
+      cartao: 1,
+      terceiro: 2,
+      emprestimo: 3,
+      financiamento: 4,
+      parcelamento: 5,
     };
     return [...todosGrupos].sort((a, b) => {
       const diff = order[a.tipo] - order[b.tipo];

@@ -1,24 +1,16 @@
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import {
-  Home,
-  ListChecks,
-  Wallet,
-  ArrowLeftRight,
-  Plus,
-  TrendingDown,
-  TrendingUp,
-  CreditCard,
-  X,
-  Users,
-} from "lucide-react";
+import { Hop as Home, CalendarCheck, Wallet, ArrowLeftRight, Plus, TrendingDown, TrendingUp, CreditCard, X, Users, ListChecks } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const items = [
+const leftItems = [
   { to: "/", label: "Início", icon: Home },
   { to: "/transacoes", label: "Transações", icon: ArrowLeftRight },
-  { to: "/minhas-dividas", label: "Dívidas", icon: ListChecks },
+] as const;
+
+const rightItems = [
   { to: "/carteira", label: "Carteira", icon: Wallet },
+  { to: "/minhas-dividas", label: "Dívidas", icon: ListChecks },
 ] as const;
 
 export function BottomNav() {
@@ -30,33 +22,61 @@ export function BottomNav() {
     void navigate({ to: path });
   };
 
-  const left = items.slice(0, 2);
-  const right = items.slice(2);
-
   return (
     <>
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/85 backdrop-blur-lg">
         <ul className="mx-auto flex max-w-md items-stretch justify-around px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2">
-          {left.map((it) => (
+          {leftItems.map((it) => (
             <NavItem key={it.to} {...it} />
           ))}
 
-          <li className="flex-1 flex items-center justify-center">
-            <button
-              type="button"
-              onClick={() => setOpen(true)}
-              aria-label="Registrar"
-              className="-mt-7 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-primary text-primary-foreground shadow-glow ring-4 ring-background transition-transform active:scale-95"
+          {/* Centro — Compromissos do Mês (botão destacado) */}
+          <li className="flex-1 flex flex-col items-center justify-center gap-1">
+            <Link
+              to="/compromissos-do-mes"
+              className="group flex flex-col items-center gap-0.5"
+              activeProps={{}}
             >
-              <Plus className="h-7 w-7" strokeWidth={2.5} />
-            </button>
+              {({ isActive }) => (
+                <>
+                  <span
+                    className={cn(
+                      "-mt-7 flex h-14 w-14 items-center justify-center rounded-full shadow-glow ring-4 ring-background transition-all",
+                      isActive
+                        ? "bg-gradient-primary text-primary-foreground scale-105"
+                        : "bg-gradient-primary text-primary-foreground hover:scale-105 active:scale-95",
+                    )}
+                  >
+                    <CalendarCheck className="h-6 w-6" strokeWidth={2.2} />
+                  </span>
+                  <span
+                    className={cn(
+                      "text-[10.5px] font-medium mt-1",
+                      isActive ? "text-primary" : "text-muted-foreground",
+                    )}
+                  >
+                    Compromissos
+                  </span>
+                </>
+              )}
+            </Link>
           </li>
 
-          {right.map((it) => (
+          {rightItems.map((it) => (
             <NavItem key={it.to} {...it} />
           ))}
         </ul>
       </nav>
+
+      {/* FAB de registro rápido — accessible via botão no header ou outro ponto */}
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label="Registrar"
+        className="fixed bottom-[calc(max(env(safe-area-inset-bottom),0.5rem)+4.5rem)] right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-primary text-primary-foreground shadow-lg ring-2 ring-background transition-transform active:scale-95 hover:scale-105"
+      >
+        <Plus className="h-6 w-6" strokeWidth={2.5} />
+      </button>
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-end justify-center">
@@ -121,7 +141,7 @@ function NavItem({ to, label, icon: Icon }: { to: string; label: string; icon: t
     <li className="flex-1">
       <Link
         to={to}
-        activeOptions={{ exact: true }}
+        activeOptions={{ exact: to === "/" }}
         className="group flex flex-col items-center gap-1 rounded-2xl px-2 py-2 text-muted-foreground transition-colors"
         activeProps={{ className: "text-primary" }}
       >

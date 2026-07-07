@@ -1,15 +1,6 @@
 import { useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  ChevronLeft,
-  ChevronRight,
-  CreditCard,
-  Users,
-  Landmark,
-  TrendingDown,
-  CheckCircle2,
-  Clock,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, CreditCard, Users, Landmark, TrendingDown, CircleCheck as CheckCircle2, Clock } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { PayCheckbox } from "@/components/PayCheckbox";
 import { formatBRLFull, useFinance } from "@/lib/finance-store";
@@ -123,6 +114,15 @@ function CompromissosDoMes() {
     return m;
   }, [dividas]);
 
+  // Set of frozen commitment group IDs — transactions in these groups are excluded
+  const frozenGroupIds = useMemo(() => {
+    const s = new Set<string>();
+    for (const d of dividas) {
+      if (d.frozenAt && d.commitmentGroupId) s.add(d.commitmentGroupId);
+    }
+    return s;
+  }, [dividas]);
+
   // ── 1. Faturas de cartão ──
   const gruposCartao = useMemo<GrupoOrigem[]>(() => {
     const grupos: GrupoOrigem[] = [];
@@ -184,10 +184,14 @@ function CompromissosDoMes() {
     >();
 
     for (const t of transacoes) {
-      if (!t.purchaseGroupId) continue;
+      // Support both purchase_group_id (card purchases) and commitment_group_id (debts)
+      const gid = t.purchaseGroupId ?? t.commitmentGroupId;
+      if (!gid) continue;
       if (t.invoiceId) continue; // cartão já tratado
       if (t.kind !== "despesa") continue;
       if (!inMonth(t.dueDate ?? t.data)) continue;
+      // Skip frozen commitment groups
+      if (t.commitmentGroupId && frozenGroupIds.has(t.commitmentGroupId)) continue;
 
       const pago = !!t.paidAt;
       const item: ItemCompromisso = {
@@ -220,8 +224,8 @@ function CompromissosDoMes() {
         g.total += t.valor;
         if (pago) g.totalPago += t.valor;
       } else {
-        // Agrupar por purchaseGroupId
-        const gid = t.purchaseGroupId;
+        // Agrupar por purchaseGroupId ou commitmentGroupId
+        const gid = t.purchaseGroupId ?? t.commitmentGroupId;
         if (!byGroup.has(gid)) {
           const tipo: "emprestimo" | "financiamento" | "parcelamento" =
             debtTypeByGroup.get(gid) ?? "parcelamento";

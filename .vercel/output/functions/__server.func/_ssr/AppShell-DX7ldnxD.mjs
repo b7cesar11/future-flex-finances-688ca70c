@@ -3,7 +3,7 @@ import { t as supabase } from "./client-CvGyVUKL.mjs";
 import { a as require_jsx_runtime, i as useQueryClient, o as require_react } from "../_libs/react+tanstack__react-query.mjs";
 import { r as usePeriod } from "./period-filter-rr7Zu06i.mjs";
 import { g as useNavigate, h as Link } from "../_libs/@tanstack/react-router+[...].mjs";
-import { C as ListChecks, D as CreditCard, F as CalendarClock, K as CircleUserRound, M as Check, O as Contact, P as CalendarRange, R as ArrowLeftRight, W as House, b as LogOut, c as TrendingDown, h as PiggyBank, i as Users, n as X, p as Plus, r as Wallet, s as TrendingUp, v as Package, w as LayoutList, y as Menu } from "../_libs/lucide-react.mjs";
+import { B as ArrowLeftRight, I as CalendarRange, K as House, L as CalendarClock, O as CreditCard, P as Check, T as LayoutList, b as LogOut, c as TrendingDown, h as PiggyBank, i as Users, k as Contact, n as X, p as Plus, q as CircleUserRound, r as Wallet, s as TrendingUp, v as Package, w as ListChecks, y as Menu } from "../_libs/lucide-react.mjs";
 import { t as clsx } from "../_libs/clsx.mjs";
 import { t as twMerge } from "../_libs/tailwind-merge.mjs";
 //#region node_modules/.nitro/vite/services/ssr/assets/AppShell-DX7ldnxD.js

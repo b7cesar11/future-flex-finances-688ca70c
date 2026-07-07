@@ -182,28 +182,6 @@ var CircleUserRound = createLucideIcon("circle-user-round", [
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
-var CircleX = createLucideIcon("circle-x", [
-	["circle", {
-		cx: "12",
-		cy: "12",
-		r: "10",
-		key: "1mglay"
-	}],
-	["path", {
-		d: "m15 9-6 6",
-		key: "1uzhvr"
-	}],
-	["path", {
-		d: "m9 9 6 6",
-		key: "z0biqf"
-	}]
-]);
-/**
-* @license lucide-react v0.575.0 - ISC
-*
-* This source code is licensed under the ISC license.
-* See the LICENSE file in the root directory of this source tree.
-*/
 var House = createLucideIcon("house", [["path", {
 	d: "M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8",
 	key: "5wwlr5"
@@ -482,6 +460,18 @@ var ChevronRight = createLucideIcon("chevron-right", [["path", {
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var Circle = createLucideIcon("circle", [["circle", {
+	cx: "12",
+	cy: "12",
+	r: "10",
+	key: "1mglay"
+}]]);
+/**
+* @license lucide-react v0.575.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var Clock = createLucideIcon("clock", [["circle", {
 	cx: "12",
 	cy: "12",
@@ -707,6 +697,46 @@ var ListOrdered = createLucideIcon("list-ordered", [
 	["path", {
 		d: "M6.5 20H3.4c0-1 2.6-1.925 2.6-3.5a1.5 1.5 0 0 0-2.6-1.02",
 		key: "xtkcd5"
+	}]
+]);
+/**
+* @license lucide-react v0.575.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var Loader = createLucideIcon("loader", [
+	["path", {
+		d: "M12 2v4",
+		key: "3427ic"
+	}],
+	["path", {
+		d: "m16.2 7.8 2.9-2.9",
+		key: "r700ao"
+	}],
+	["path", {
+		d: "M18 12h4",
+		key: "wj9ykh"
+	}],
+	["path", {
+		d: "m16.2 16.2 2.9 2.9",
+		key: "1bxg5t"
+	}],
+	["path", {
+		d: "M12 18v4",
+		key: "jadmvz"
+	}],
+	["path", {
+		d: "m4.9 19.1 2.9-2.9",
+		key: "bwix9q"
+	}],
+	["path", {
+		d: "M2 12h4",
+		key: "j09sii"
+	}],
+	["path", {
+		d: "m4.9 4.9 2.9 2.9",
+		key: "giyufr"
 	}]
 ]);
 /**
@@ -1147,4 +1177,4 @@ var Zap = createLucideIcon("zap", [["path", {
 	key: "1xq2db"
 }]]);
 //#endregion
-export { ChevronRight as A, Activity as B, ListChecks as C, CreditCard as D, HandCoins as E, CalendarClock as F, CircleX as G, Sparkles as H, ArrowUpRight as I, CircleAlert as J, CircleUserRound as K, ArrowLeft as L, Check as M, Calendar as N, Contact as O, CalendarRange as P, ArrowLeftRight as R, ListOrdered as S, Landmark as T, LoaderCircle as U, TriangleAlert as V, House as W, Pencil as _, User as a, LogOut as b, TrendingDown as c, Snowflake as d, Repeat as f, Percent as g, PiggyBank as h, Users as i, ChevronLeft as j, Clock as k, Trash2 as l, Pin as m, X as n, UserPlus as o, Plus as p, CircleCheck as q, Wallet as r, TrendingUp as s, Zap as t, Target as u, Package as v, LayoutList as w, Lock as x, Menu as y, ArrowDownRight as z };
+export { Clock as A, ArrowLeftRight as B, ListOrdered as C, HandCoins as D, Landmark as E, Calendar as F, LoaderCircle as G, Activity as H, CalendarRange as I, CircleCheck as J, House as K, CalendarClock as L, ChevronRight as M, ChevronLeft as N, CreditCard as O, Check as P, ArrowUpRight as R, Loader as S, LayoutList as T, TriangleAlert as U, ArrowDownRight as V, Sparkles as W, CircleAlert as Y, Pencil as _, User as a, LogOut as b, TrendingDown as c, Snowflake as d, Repeat as f, Percent as g, PiggyBank as h, Users as i, Circle as j, Contact as k, Trash2 as l, Pin as m, X as n, UserPlus as o, Plus as p, CircleUserRound as q, Wallet as r, TrendingUp as s, Zap as t, Target as u, Package as v, ListChecks as w, Lock as x, Menu as y, ArrowLeft as z };

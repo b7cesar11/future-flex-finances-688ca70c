@@ -67,6 +67,8 @@ function MinhasDividas() {
     estornarParcela,
     updateDebtInstallment,
     deleteDebt,
+    congelarCompromisso,
+    descongelarCompromisso,
   } = useFinance();
 
   const [tab, setTab] = useState<"fixa" | "parcelamentos" | "congelada">("parcelamentos");
@@ -240,6 +242,22 @@ function MinhasDividas() {
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>
+                            {d.commitmentGroupId && (
+                              <button
+                                type="button"
+                                aria-label={d.frozenAt ? "Descongelar" : "Congelar"}
+                                onClick={async () => {
+                                  if (d.frozenAt) {
+                                    await descongelarCompromisso(d.commitmentGroupId!);
+                                  } else {
+                                    await congelarCompromisso(d.commitmentGroupId!);
+                                  }
+                                }}
+                                className={`flex h-7 w-7 items-center justify-center rounded-lg hover:bg-secondary ${d.frozenAt ? "text-sky-400" : "text-muted-foreground"}`}
+                              >
+                                <Snowflake className="h-3.5 w-3.5" />
+                              </button>
+                            )}
                           </div>
                         )}
                       </div>

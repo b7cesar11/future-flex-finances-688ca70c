@@ -1,6 +1,6 @@
 import { i as __toESM } from "../_runtime.mjs";
 import { a as require_jsx_runtime, o as require_react } from "../_libs/react+tanstack__react-query.mjs";
-import { V as TriangleAlert } from "../_libs/lucide-react.mjs";
+import { U as TriangleAlert } from "../_libs/lucide-react.mjs";
 //#region node_modules/.nitro/vite/services/ssr/assets/ConfirmDialog-UpGu7Zfw.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();

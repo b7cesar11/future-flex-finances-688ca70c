@@ -1,5 +1,5 @@
 import { a as require_jsx_runtime } from "../_libs/react+tanstack__react-query.mjs";
-import { V as TriangleAlert } from "../_libs/lucide-react.mjs";
+import { U as TriangleAlert } from "../_libs/lucide-react.mjs";
 //#region node_modules/.nitro/vite/services/ssr/assets/OverdueBadge-DxIA_cEE.js
 var import_jsx_runtime = require_jsx_runtime();
 function isOverdue(dueDate, status) {

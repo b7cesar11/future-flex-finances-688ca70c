@@ -24,6 +24,7 @@ export interface Debt {
   isVariable: boolean;
   statusThisMonth: PaymentStatus;
   commitmentGroupId: string | null;
+  frozenAt: string | null;
   /** ID da parcela do mês atual em `transactions` (para pagar/estornar via RPC unificada) */
   currentInstallmentTxId: string | null;
 }
@@ -214,6 +215,8 @@ interface FinanceState {
   }) => Promise<void>;
   updateDebtInstallment: (id: string, valorParcela: number) => Promise<void>;
   deleteDebt: (id: string) => Promise<void>;
+  congelarCompromisso: (groupId: string) => Promise<void>;
+  descongelarCompromisso: (groupId: string) => Promise<void>;
   addTransaction: (tx: {
     kind: TxKind;
     descricao: string;
@@ -326,7 +329,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("debts")
-        .select("*")
+        .select("*, commitment_groups(frozen_at)")
         .order("created_at", { ascending: true });
       if (error) throw error;
       return data ?? [];
@@ -501,6 +504,22 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   const deleteDebtM = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("debts").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateAll,
+  });
+
+  const congelarM = useMutation({
+    mutationFn: async (groupId: string) => {
+      const { error } = await (supabase as any).rpc("congelar_compromisso", { _group_id: groupId });
+      if (error) throw error;
+    },
+    onSuccess: invalidateAll,
+  });
+
+  const descongelarM = useMutation({
+    mutationFn: async (groupId: string) => {
+      const { error } = await (supabase as any).rpc("descongelar_compromisso", { _group_id: groupId });
       if (error) throw error;
     },
     onSuccess: invalidateAll,
@@ -1105,11 +1124,14 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         parcelasRestantes,
         parcelasTotais,
         tipo: r.type as DebtType,
-        category: (r.category ?? (r.is_variable ? "variavel" : "parcelada")) as DebtCategory,
+        category: ((r as any).commitment_groups?.frozen_at
+          ? "congelada"
+          : (r.category ?? (r.is_variable ? "variavel" : "parcelada"))) as DebtCategory,
         dueDay: r.due_day ?? null,
         isVariable: r.is_variable ?? false,
         statusThisMonth,
         commitmentGroupId: groupId,
+        frozenAt: (r as any).commitment_groups?.frozen_at ?? null,
         currentInstallmentTxId,
       };
     });
@@ -1366,6 +1388,12 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       deleteDebt: async (id) => {
         await deleteDebtM.mutateAsync(id);
       },
+      congelarCompromisso: async (groupId) => {
+        await congelarM.mutateAsync(groupId);
+      },
+      descongelarCompromisso: async (groupId) => {
+        await descongelarM.mutateAsync(groupId);
+      },
       addTransaction: async (t) => {
         await addTxM.mutateAsync(t);
       },
@@ -1481,6 +1509,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     criarDividaCompromissoM,
     updateDebtInstallmentM,
     deleteDebtM,
+    congelarM,
+    descongelarM,
     addTxM,
     setTxStatusM,
     deleteTxM,

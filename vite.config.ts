@@ -11,8 +11,14 @@ export default defineConfig({
     server: {
       allowedHosts: true,
     },
+    resolve: {
+      alias: {
+        // Força o uso da versão ESM da tslib para evitar erros de destructuring no Vercel SSR
+        "tslib": "tslib/tslib.es6.js",
+      },
+    },
     ssr: {
-      noExternal: true, // Força o empacotamento de todas as dependências no bundle SSR
+      noExternal: ["tslib", "@supabase/supabase-js", "@supabase/functions-js", "@supabase/postgrest-js", "@supabase/auth-js", "@supabase/realtime-js", "@supabase/storage-js"],
     },
   },
   tanstackStart: {
@@ -22,8 +28,5 @@ export default defineConfig({
   },
   nitro: {
     preset: "vercel",
-    externals: {
-      inline: ["tslib", "@supabase/supabase-js", "@supabase/functions-js"],
-    },
   },
 });

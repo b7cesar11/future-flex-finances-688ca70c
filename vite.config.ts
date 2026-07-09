@@ -11,6 +11,9 @@ export default defineConfig({
     server: {
       allowedHosts: true,
     },
+    ssr: {
+      noExternal: true, // Força o empacotamento de todas as dependências no bundle SSR
+    },
   },
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
@@ -20,7 +23,7 @@ export default defineConfig({
   nitro: {
     preset: "vercel",
     externals: {
-      inline: ["tslib"],
+      inline: ["tslib", "@supabase/supabase-js", "@supabase/functions-js"],
     },
   },
 });

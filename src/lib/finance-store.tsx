@@ -259,10 +259,14 @@ interface FinanceState {
   updateEnvelope: (id: string, patch: Partial<Envelope>) => Promise<void>;
   deleteEnvelope: (id: string) => Promise<void>;
   addAccount: (a: { nome: string; tipo: AccountType; saldoInicial: number; emoji?: string; cor?: string }) => Promise<void>;
+  updateAccount: (id: string, patch: Partial<{ nome: string; tipo: AccountType; emoji: string; cor: string }>) => Promise<void>;
+  deleteAccount: (id: string) => Promise<void>;
   wipeAllData: () => Promise<void>;
 
   // ---- Fase 6/7/8: cartões, faturas e atomic RPCs ----
   addCreditCard: (c: { name: string; closingDay: number; dueDay: number; paymentAccountId?: string | null; creditLimit?: number | null }) => Promise<void>;
+  updateCreditCard: (id: string, patch: Partial<{ name: string; closingDay: number; dueDay: number; paymentAccountId: string | null; creditLimit: number | null; active: boolean }>) => Promise<void>;
+  deleteCreditCard: (id: string) => Promise<void>;
   criarCompraParcelada: (input: {
     description: string;
     amountTotal: number;
@@ -692,6 +696,19 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     onSuccess: invalidateAll,
   });
 
+  const updateIncomeSourceM = useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: Partial<IncomeSource> }) => {
+      const row: any = {};
+      if (patch.name !== undefined) row.name = patch.name;
+      if (patch.expectedDay !== undefined) row.expected_day = patch.expectedDay;
+      if (patch.amount !== undefined) row.amount = patch.amount;
+      if (patch.accountId !== undefined) row.account_id = patch.accountId;
+      const { error } = await (supabase as any).from("income_sources").update(row).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateAll,
+  });
+
   const deleteIncomeM = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await (supabase as any).from("income_sources").delete().eq("id", id);
@@ -940,6 +957,27 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     onSuccess: () => bust("conta_criada"),
   });
 
+  const updateAccountM = useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: Partial<{ nome: string; tipo: AccountType; emoji: string; cor: string }> }) => {
+      const row: any = {};
+      if (patch.nome !== undefined) row.name = patch.nome;
+      if (patch.tipo !== undefined) row.type = patch.tipo;
+      if (patch.emoji !== undefined) row.emoji = patch.emoji;
+      if (patch.cor !== undefined) row.color = patch.cor;
+      const { error } = await supabase.from("accounts").update(row).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => bust("conta_criada"),
+  });
+
+  const deleteAccountM = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("accounts").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => bust("conta_criada"),
+  });
+
   // ---- Cartões de crédito ----
   const addCreditCardM = useMutation({
     mutationFn: async (c: {
@@ -959,6 +997,29 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         payment_account_id: c.paymentAccountId ?? null,
         credit_limit: c.creditLimit ?? null,
       });
+      if (error) throw error;
+    },
+    onSuccess: () => bust("cartao_criado"),
+  });
+
+  const updateCreditCardM = useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: Partial<{ name: string; closingDay: number; dueDay: number; paymentAccountId: string | null; creditLimit: number | null; active: boolean }> }) => {
+      const row: any = {};
+      if (patch.name !== undefined) row.name = patch.name;
+      if (patch.closingDay !== undefined) row.closing_day = patch.closingDay;
+      if (patch.dueDay !== undefined) row.due_day = patch.dueDay;
+      if (patch.paymentAccountId !== undefined) row.payment_account_id = patch.paymentAccountId;
+      if (patch.creditLimit !== undefined) row.credit_limit = patch.creditLimit;
+      if (patch.active !== undefined) row.active = patch.active;
+      const { error } = await (supabase as any).from("credit_cards").update(row).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => bust("cartao_criado"),
+  });
+
+  const deleteCreditCardM = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).from("credit_cards").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => bust("cartao_criado"),
@@ -1436,6 +1497,9 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       setIncomeStatus: async (id, status) => {
         await setIncomeStatusM.mutateAsync({ id, status });
       },
+      updateIncomeSource: async (id, patch) => {
+        await updateIncomeSourceM.mutateAsync({ id, patch });
+      },
       deleteIncomeSource: async (id) => {
         await deleteIncomeM.mutateAsync(id);
       },
@@ -1475,8 +1539,20 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       addAccount: async (a) => {
         await addAccountM.mutateAsync(a);
       },
+      updateAccount: async (id, patch) => {
+        await updateAccountM.mutateAsync({ id, patch });
+      },
+      deleteAccount: async (id) => {
+        await deleteAccountM.mutateAsync(id);
+      },
       addCreditCard: async (c) => {
         await addCreditCardM.mutateAsync(c);
+      },
+      updateCreditCard: async (id, patch) => {
+        await updateCreditCardM.mutateAsync({ id, patch });
+      },
+      deleteCreditCard: async (id) => {
+        await deleteCreditCardM.mutateAsync(id);
       },
       criarCompraParcelada: async (input) => {
         return await criarCompraParceladaM.mutateAsync(input);
@@ -1535,9 +1611,16 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     deleteThirdPartyM,
     addIncomeM,
     setIncomeStatusM,
+    updateIncomeSourceM,
     deleteIncomeM,
     wipeM,
     alternarStatusTransacaoM,
+    addAccountM,
+    updateAccountM,
+    deleteAccountM,
+    addCreditCardM,
+    updateCreditCardM,
+    deleteCreditCardM,
   ]);
 
   return <FinanceContext.Provider value={value}>{children}</FinanceContext.Provider>;

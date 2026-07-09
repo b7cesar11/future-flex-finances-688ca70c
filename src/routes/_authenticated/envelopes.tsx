@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus, Trash2, Pencil, AlertTriangle, Package } from "lucide-react";
+import { Plus, Trash2, Pencil, TriangleAlert as AlertTriangle, Package } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { formatBRLFull, useFinance } from "@/lib/finance-store";
@@ -11,7 +11,7 @@ export const Route = createFileRoute("/_authenticated/envelopes")({
 });
 
 function EnvelopesPage() {
-  const { envelopes, envelopesCommitted, addEnvelope, updateEnvelope, deleteEnvelope } = useFinance();
+  const { envelopes, envelopesCommitted, isLoading, addEnvelope, updateEnvelope, deleteEnvelope } = useFinance();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [confirmDel, setConfirmDel] = useState<string | null>(null);
@@ -117,7 +117,20 @@ function EnvelopesPage() {
       )}
 
       <ul className="mt-5 space-y-3">
-        {envelopes.length === 0 && !open && (
+        {isLoading ? (
+          [1, 2, 3].map((i) => (
+            <li key={i} className="rounded-3xl bg-card p-4 shadow-card">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 animate-pulse rounded-2xl bg-secondary" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-32 animate-pulse rounded bg-secondary" />
+                  <div className="h-3 w-24 animate-pulse rounded bg-secondary" />
+                </div>
+              </div>
+              <div className="mt-3 h-2 animate-pulse rounded-full bg-secondary" />
+            </li>
+          ))
+        ) : envelopes.length === 0 && !open ? (
           <li className="rounded-3xl bg-card p-8 text-center shadow-card">
             <Package className="mx-auto h-8 w-8 text-muted-foreground" />
             <p className="mt-3 text-sm font-semibold text-foreground">Nenhum envelope ainda</p>
@@ -125,8 +138,9 @@ function EnvelopesPage() {
               Reserve parte do salário para "Comida", "Combustível" etc.
             </p>
           </li>
-        )}
-        {envelopes.map((e) => {
+        ) : (
+          <>
+            {envelopes.map((e) => {
           const pct = e.monthlyLimit
             ? Math.min(100, Math.round((e.currentSpent / e.monthlyLimit) * 100))
             : 0;
@@ -186,6 +200,8 @@ function EnvelopesPage() {
             </li>
           );
         })}
+          </>
+        )}
       </ul>
 
       {!open && (

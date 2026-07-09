@@ -30,7 +30,7 @@ function saldoDaPessoa(items: ThirdParty[]) {
 }
 
 function ContatosPage() {
-  const { pessoas, terceiros, addPerson, updatePerson, deletePerson } = useFinance();
+  const { pessoas, terceiros, isLoading, addPerson, updatePerson, deletePerson } = useFinance();
   const [openNew, setOpenNew] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [confirmDel, setConfirmDel] = useState<string | null>(null);
@@ -80,7 +80,7 @@ function ContatosPage() {
 
   return (
     <AppShell title="Contatos" subtitle="Hub de pessoas, empresas e família">
-      {pessoas.length === 0 && !openNew && (
+      {!isLoading && pessoas.length === 0 && !openNew && (
         <div className="rounded-3xl bg-card p-8 text-center shadow-card">
           <Users className="mx-auto h-8 w-8 text-muted-foreground" />
           <p className="mt-3 text-sm font-semibold text-foreground">Nenhum contato ainda</p>
@@ -154,7 +154,33 @@ function ContatosPage() {
       )}
 
       <ul className="space-y-2">
-        {pessoas.map((p) => {
+        {isLoading ? (
+          [1, 2, 3, 4].map((i) => (
+            <li key={i} className="flex items-center gap-3 rounded-2xl bg-card px-3 py-3 shadow-card">
+              <div className="h-10 w-10 animate-pulse rounded-full bg-secondary" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 w-32 animate-pulse rounded bg-secondary" />
+                <div className="h-3 w-20 animate-pulse rounded bg-secondary" />
+              </div>
+            </li>
+          ))
+        ) : pessoas.length === 0 && !openNew ? (
+          <li className="rounded-3xl bg-card p-8 text-center shadow-card">
+            <Users className="mx-auto h-8 w-8 text-muted-foreground" />
+            <p className="mt-3 text-sm font-semibold text-foreground">Nenhum contato ainda</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Comece cadastrando quem envolve seu dinheiro.
+            </p>
+            <button
+              type="button"
+              onClick={() => setOpenNew(true)}
+              className="mt-4 inline-flex items-center gap-2 rounded-full bg-gradient-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+            >
+              <Plus className="h-4 w-4" /> Novo contato
+            </button>
+          </li>
+        ) : (
+          pessoas.map((p) => {
           const items = totaisPorPessoa.get(p.id) ?? [];
           const saldo = saldoDaPessoa(items);
           return (
@@ -209,7 +235,8 @@ function ContatosPage() {
               </button>
             </li>
           );
-        })}
+        })
+        )}
       </ul>
 
       {!openNew && pessoas.length > 0 && (

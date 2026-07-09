@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight, CreditCard, Users, Landmark, TrendingDown, TrendingUp, CircleCheck as CheckCircle2, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight, CreditCard, Users, Landmark, TrendingDown, TrendingUp, CircleCheck as CheckCircle2, Clock, TriangleAlert as AlertTriangle } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { PayCheckbox } from "@/components/PayCheckbox";
 import { formatBRLFull, useFinance } from "@/lib/finance-store";
@@ -89,7 +89,7 @@ function originBorder(tipo: OrigemTipo) {
 // ──────────────────────────────────────────────
 function CompromissosDoMes() {
   const finance = useFinance();
-  const { transacoes, dividas, faturas, cartoes, pessoas } = finance;
+  const { transacoes, dividas, faturas, cartoes, pessoas, isLoading } = finance;
   const { label, goToNextMonth, goToPreviousMonth, canGoNext, currentReferenceMonth } =
     useMonthNavigator();
 
@@ -301,6 +301,16 @@ function CompromissosDoMes() {
   const totalPendente = totalMes - totalPagoMes;
   const pctPago = totalMes > 0 ? Math.round((totalPagoMes / totalMes) * 100) : 0;
 
+  const totalAtrasado = useMemo(() => {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    return todosGrupos.reduce((s, g) => {
+      return s + g.itens.reduce((acc, item) => {
+        if (!item.pago && item.dueDate && item.dueDate < todayStr) return acc + item.valor;
+        return acc;
+      }, 0);
+    }, 0);
+  }, [todosGrupos]);
+
   // Ordenação: terceiros primeiro, depois por tipo, depois por total desc
   const gruposOrdenados = useMemo(() => {
     const order: Record<OrigemTipo, number> = {
@@ -358,6 +368,12 @@ function CompromissosDoMes() {
               <Clock className="h-4 w-4" />
               {formatBRLFull(totalPendente)} pendente
             </span>
+            {totalAtrasado > 0 && (
+              <span className="flex items-center gap-1.5 text-destructive">
+                <AlertTriangle className="h-4 w-4" />
+                {formatBRLFull(totalAtrasado)} atrasado
+              </span>
+            )}
           </div>
         </div>
         {/* Barra de progresso */}
@@ -373,7 +389,22 @@ function CompromissosDoMes() {
       </div>
 
       {/* Grupos por origem */}
-      {gruposOrdenados.length === 0 ? (
+      {isLoading ? (
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="rounded-3xl bg-card p-4 shadow-card">
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 animate-pulse rounded-2xl bg-secondary" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-32 animate-pulse rounded bg-secondary" />
+                  <div className="h-3 w-24 animate-pulse rounded bg-secondary" />
+                </div>
+                <div className="h-5 w-16 animate-pulse rounded bg-secondary" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : gruposOrdenados.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-3xl bg-card py-16 text-center shadow-card">
           <CheckCircle2 className="h-12 w-12 text-muted-foreground/30" />
           <p className="text-sm font-medium text-muted-foreground">
@@ -443,8 +474,10 @@ function GrupoCard({ grupo }: { grupo: GrupoOrigem }) {
       {/* Lista de itens */}
       {grupo.itens.length > 0 && (
         <div className="divide-y divide-border/30">
-          {grupo.itens.map((item) => (
-            <div key={item.id} className="flex items-center gap-3 px-4 py-2.5">
+          {grupo.itens.map((item) => {
+            const isOverdue = !item.pago && item.dueDate && new Date(item.dueDate + "T00:00:00") < new Date(new Date().toISOString().slice(0, 10) + "T00:00:00");
+            return (
+            <div key={item.id} className={`flex items-center gap-3 px-4 py-2.5 ${isOverdue ? "bg-destructive/5" : ""}`}>
               <span
                 className={`shrink-0 ${item.pago ? "text-emerald-400" : "text-muted-foreground/40"}`}
               >
@@ -459,26 +492,36 @@ function GrupoCard({ grupo }: { grupo: GrupoOrigem }) {
               <div className="min-w-0 flex-1">
                 <p
                   className={`truncate text-xs font-medium ${
-                    item.pago ? "text-muted-foreground line-through" : "text-foreground"
+                    item.pago ? "text-muted-foreground line-through" : isOverdue ? "text-destructive" : "text-foreground"
                   }`}
                 >
                   {item.descricao}
                 </p>
                 <div className="flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
                   {item.parcela && <span>Parcela {item.parcela}</span>}
-                  {item.dueDate && <span>Venc {fmtDate(item.dueDate)}</span>}
+                  {item.dueDate && (
+                    <span className={isOverdue ? "font-semibold text-destructive" : ""}>
+                      Venc {fmtDate(item.dueDate)}
+                    </span>
+                  )}
                   {item.pessoa && <span>· {item.pessoa}</span>}
+                  {isOverdue && (
+                    <span className="inline-flex items-center gap-0.5 rounded bg-destructive/15 px-1 py-0.5 font-semibold text-destructive">
+                      <AlertTriangle className="h-2.5 w-2.5" /> Atrasado
+                    </span>
+                  )}
                 </div>
               </div>
               <span
                 className={`shrink-0 text-xs font-semibold ${
-                  item.pago ? "text-muted-foreground" : "text-foreground"
+                  item.pago ? "text-muted-foreground" : isOverdue ? "text-destructive" : "text-foreground"
                 }`}
               >
                 {formatBRLFull(item.valor)}
               </span>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

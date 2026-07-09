@@ -9,6 +9,8 @@ import {
   XAxis,
   YAxis,
   Cell,
+  Pie,
+  PieChart,
 } from "recharts";
 import { Sparkles, TrendingUp, Wallet, ArrowUpRight, ArrowDownRight, Percent, PiggyBank, Target, CircleAlert as AlertCircle, Calendar, Activity, CalendarClock, CalendarCheck, Users } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -48,6 +50,7 @@ function Dashboard() {
     pendentesMesTotal,
     livreParaGastar,
     envelopesCommitted,
+    isLoading,
   } = useFinance();
   const { range, isInRange } = usePeriod();
 
@@ -123,6 +126,19 @@ function Dashboard() {
       title={greetingName ? `Olá, ${greetingName}` : "Olá"}
       subtitle={`Visão ${range.kind === "mensal" ? "do mês" : range.kind === "semanal" ? "da semana" : range.kind === "anual" ? "do ano" : "do período"}`}
     >
+      {isLoading && (
+        <div className="space-y-4">
+          <div className="h-32 animate-pulse rounded-3xl bg-secondary" />
+          <div className="grid grid-cols-2 gap-3">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-20 animate-pulse rounded-2xl bg-secondary" />
+            ))}
+          </div>
+          <div className="h-40 animate-pulse rounded-3xl bg-secondary" />
+        </div>
+      )}
+      {!isLoading && (
+        <>
       {/* ============= LIVRE PARA GASTAR HOJE ============= */}
       <section
         className={`overflow-hidden rounded-3xl p-5 shadow-card ${
@@ -250,25 +266,67 @@ function Dashboard() {
             );
           }
           const maxVal = Math.max(...catData.map((d) => d.value));
+          const totalDespesas = catData.reduce((s, d) => s + d.value, 0);
+          const pieColors = ["#3b82f6", "#10b981", "#f59e0b", "#ec4899", "#8b5cf6", "#ef4444"];
           return (
-            <div className="space-y-2.5">
-              {catData.map((d) => {
-                const pct = maxVal > 0 ? Math.round((d.value / maxVal) * 100) : 0;
-                return (
-                  <div key={d.name} className="flex items-center gap-3">
-                    <span className="w-24 shrink-0 truncate text-xs text-muted-foreground">{d.name}</span>
-                    <div className="relative h-6 flex-1 overflow-hidden rounded-lg bg-secondary">
-                      <div
-                        className="absolute inset-y-0 left-0 rounded-lg bg-gradient-to-r from-primary/80 to-primary transition-all duration-500"
-                        style={{ width: `${pct}%` }}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+              <div className="flex-shrink-0">
+                <ResponsiveContainer width={180} height={180}>
+                  <PieChart>
+                    <Pie
+                      data={catData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={45}
+                      outerRadius={80}
+                      paddingAngle={2}
+                    >
+                      {catData.map((_, i) => (
+                        <Cell key={i} fill={pieColors[i % pieColors.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        background: "var(--popover)",
+                        border: "1px solid var(--border)",
+                        borderRadius: 12,
+                        color: "var(--foreground)",
+                        fontSize: 12,
+                      }}
+                      formatter={(v: number) => [formatBRL(v), "Gasto"]}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <p className="text-center text-[11px] text-muted-foreground">
+                  Total: <strong className="text-foreground">{formatBRL(totalDespesas)}</strong>
+                </p>
+              </div>
+              <div className="flex-1 space-y-2.5">
+                {catData.map((d, i) => {
+                  const pct = maxVal > 0 ? Math.round((d.value / maxVal) * 100) : 0;
+                  const sharePct = totalDespesas > 0 ? Math.round((d.value / totalDespesas) * 100) : 0;
+                  return (
+                    <div key={d.name} className="flex items-center gap-2">
+                      <span
+                        className="h-3 w-3 shrink-0 rounded-full"
+                        style={{ background: pieColors[i % pieColors.length] }}
                       />
+                      <span className="w-20 shrink-0 truncate text-xs text-muted-foreground">{d.name}</span>
+                      <div className="relative h-5 flex-1 overflow-hidden rounded-lg bg-secondary">
+                        <div
+                          className="absolute inset-y-0 left-0 rounded-lg transition-all duration-500"
+                          style={{ width: `${pct}%`, background: pieColors[i % pieColors.length] }}
+                        />
+                      </div>
+                      <span className="w-16 shrink-0 text-right text-xs font-semibold tabular-nums text-foreground">
+                        {sharePct}%
+                      </span>
                     </div>
-                    <span className="w-20 shrink-0 text-right text-xs font-semibold tabular-nums text-foreground">
-                      {formatBRL(d.value)}
-                    </span>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           );
         })()}
@@ -457,6 +515,8 @@ function Dashboard() {
           </div>
         )}
       </section>
+        </>
+      )}
     </AppShell>
   );
 }

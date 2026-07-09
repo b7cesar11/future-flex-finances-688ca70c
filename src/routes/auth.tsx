@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Wallet, Loader2 } from "lucide-react";
+import { Wallet, Loader as Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 // Removido lovable auth para corrigir 404 no Vercel
 
@@ -27,6 +27,10 @@ function AuthPage() {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) void navigate({ to: "/" });
     });
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) void navigate({ to: "/" });
+    });
+    return () => sub.subscription.unsubscribe();
   }, [navigate]);
 
   const submit = async (e: React.FormEvent) => {
@@ -63,7 +67,7 @@ function AuthPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: "https://future-flex-finances-688ca70c.vercel.app/auth",
+          redirectTo: `${window.location.origin}/auth`,
         },
       });
       if (error) throw error;

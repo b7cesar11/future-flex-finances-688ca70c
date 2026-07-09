@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { CreditCard as CardIcon, Plus, User } from "lucide-react";
+import { CreditCard as CardIcon, Plus, User, Pencil, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { ParcelasList } from "@/components/ParcelasList";
@@ -23,12 +23,17 @@ function CartoesPage() {
     transacoes,
     pessoas,
     contas,
+    isLoading,
     addCreditCard,
+    updateCreditCard,
+    deleteCreditCard,
     pagarFatura,
     estornarFatura,
   } = useFinance();
   const [showNew, setShowNew] = useState(false);
+  const [editingCard, setEditingCard] = useState<string | null>(null);
   const [confirmPay, setConfirmPay] = useState<string | null>(null);
+  const [confirmDelCard, setConfirmDelCard] = useState<string | null>(null);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
 
   const pessoasById = useMemo(() => {
@@ -51,13 +56,25 @@ function CartoesPage() {
     <AppShell title="Cartões" subtitle="Faturas, parcelas e pagamentos" hidePeriodFilter>
       <button
         type="button"
-        onClick={() => setShowNew(true)}
+        onClick={() => {
+          setEditingCard(null);
+          setShowNew(true);
+        }}
         className="mb-4 inline-flex items-center gap-2 rounded-full bg-gradient-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-glow"
       >
         <Plus className="h-4 w-4" /> Novo cartão
       </button>
 
-      {cartoes.length === 0 && (
+      {isLoading ? (
+        <div className="space-y-4">
+          {[1, 2].map((i) => (
+            <div key={i} className="rounded-3xl bg-card p-4 shadow-card">
+              <div className="mb-3 h-5 w-40 animate-pulse rounded bg-secondary" />
+              <div className="h-16 animate-pulse rounded-2xl bg-secondary" />
+            </div>
+          ))}
+        </div>
+      ) : cartoes.length === 0 ? (
         <div className="rounded-3xl bg-card p-8 text-center shadow-card">
           <CardIcon className="mx-auto h-8 w-8 text-muted-foreground" />
           <p className="mt-3 text-sm font-semibold">Nenhum cartão ainda</p>
@@ -65,131 +82,162 @@ function CartoesPage() {
             Cadastre para começar a lançar compras parceladas.
           </p>
         </div>
-      )}
+      ) : (
+        <div className="space-y-4">
+          {cartoes.filter((c) => c.active).map((cc) => {
+            const cardInvoices = (faturasPorCartao.get(cc.id) ?? []).slice(0, 6);
+            const conta = contas.find((c) => c.id === cc.paymentAccountId);
+            return (
+              <section key={cc.id} className="rounded-3xl bg-card p-4 shadow-card ring-1 ring-border/50">
+                <header className="mb-3 flex items-center justify-between">
+                  <div className="min-w-0">
+                    <p className="truncate text-base font-semibold text-foreground">{cc.name}</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Fecha dia {cc.closingDay} · Vence dia {cc.dueDay}
+                      {conta ? ` · Pgto: ${conta.nome}` : ""}
+                      {cc.creditLimit != null ? ` · Limite: ${formatBRLFull(cc.creditLimit)}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 gap-1">
+                    <button
+                      type="button"
+                      aria-label="Editar cartão"
+                      onClick={() => {
+                        setEditingCard(cc.id);
+                        setShowNew(true);
+                      }}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Excluir cartão"
+                      onClick={() => setConfirmDelCard(cc.id)}
+                      className="text-muted-foreground hover:text-destructive"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </header>
 
-      <div className="space-y-4">
-        {cartoes.filter((c) => c.active).map((cc) => {
-          const cardInvoices = (faturasPorCartao.get(cc.id) ?? []).slice(0, 6);
-          const conta = contas.find((c) => c.id === cc.paymentAccountId);
-          return (
-            <section key={cc.id} className="rounded-3xl bg-card p-4 shadow-card ring-1 ring-border/50">
-              <header className="mb-3 flex items-center justify-between">
-                <div>
-                  <p className="text-base font-semibold text-foreground">{cc.name}</p>
-                  <p className="text-[11px] text-muted-foreground">
-                    Fecha dia {cc.closingDay} · Vence dia {cc.dueDay}
-                    {conta ? ` · Pgto: ${conta.nome}` : ""}
+                {cardInvoices.length === 0 && (
+                  <p className="rounded-xl bg-surface-elevated px-3 py-2 text-xs text-muted-foreground">
+                    Nenhuma fatura registrada ainda.
                   </p>
-                </div>
-              </header>
+                )}
 
-              {cardInvoices.length === 0 && (
-                <p className="rounded-xl bg-surface-elevated px-3 py-2 text-xs text-muted-foreground">
-                  Nenhuma fatura registrada ainda.
-                </p>
-              )}
-
-              <div className="space-y-3">
-                {cardInvoices.map((inv) => {
-                  const items = transacoes.filter((t) => t.invoiceId === inv.id);
-                  return (
-                    <details key={inv.id} className="rounded-2xl bg-surface-elevated open:ring-1 open:ring-primary/30">
-                      <summary className="flex cursor-pointer items-center justify-between px-3 py-2.5 text-sm">
-                        <span className="font-medium">
-                          {new Date(inv.referenceMonth + "T00:00:00").toLocaleDateString("pt-BR", {
-                            month: "long",
-                            year: "numeric",
-                          })}
-                        </span>
-                        <span className="flex items-center gap-2">
-                          <span
-                            className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${statusFaturaClass(inv.status)}`}
-                          >
-                            {inv.status}
+                <div className="space-y-3">
+                  {cardInvoices.map((inv) => {
+                    const items = transacoes.filter((t) => t.invoiceId === inv.id);
+                    return (
+                      <details key={inv.id} className="rounded-2xl bg-surface-elevated open:ring-1 open:ring-primary/30">
+                        <summary className="flex cursor-pointer items-center justify-between px-3 py-2.5 text-sm">
+                          <span className="font-medium">
+                            {new Date(inv.referenceMonth + "T00:00:00").toLocaleDateString("pt-BR", {
+                              month: "long",
+                              year: "numeric",
+                            })}
                           </span>
-                          <span className="tabular-nums font-semibold">{formatBRLFull(inv.total)}</span>
-                        </span>
-                      </summary>
-                      <ul className="space-y-1 px-3 pb-3">
-                        {items.length === 0 && (
-                          <li className="rounded-lg bg-card px-2 py-1.5 text-xs text-muted-foreground">
-                            Sem lançamentos.
-                          </li>
-                        )}
-                        {items.map((t) => {
-                          const st = installmentStatus(t.paidAt, t.dueDate);
-                          const nomePessoa = t.personId ? pessoasById.get(t.personId) : null;
-                          const clickable = !!t.purchaseGroupId;
-                          return (
-                            <li
-                              key={t.id}
-                              className={`rounded-lg bg-card px-2 py-2 text-xs ${clickable ? "cursor-pointer hover:ring-1 hover:ring-primary/30" : ""}`}
-                              onClick={clickable ? () => setOpenGroup(t.purchaseGroupId!) : undefined}
+                          <span className="flex items-center gap-2">
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${statusFaturaClass(inv.status)}`}
                             >
-                              <div className="flex items-center justify-between gap-2">
-                                <div className="min-w-0 flex-1">
-                                  <p className="truncate font-medium text-foreground">{t.descricao}</p>
-                                  <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                                    <span className={`rounded px-1.5 py-0.5 ${INSTALLMENT_STATUS_CLASS[st]}`}>
-                                      {INSTALLMENT_STATUS_LABEL[st]}
-                                    </span>
-                                    {nomePessoa && (
-                                      <span className="inline-flex items-center gap-1 rounded bg-primary/15 px-1.5 py-0.5 text-primary">
-                                        <User className="h-2.5 w-2.5" /> {nomePessoa}
-                                      </span>
-                                    )}
-                                    {t.installmentTotal && t.installmentNumber && (
-                                      <span>
-                                        {t.installmentNumber}/{t.installmentTotal}
-                                      </span>
-                                    )}
-                                    {clickable && <span className="text-primary">· ver parcelas</span>}
-                                  </div>
-                                </div>
-                                <span className="tabular-nums font-semibold">{formatBRLFull(t.valor)}</span>
-                              </div>
+                              {inv.status}
+                            </span>
+                            <span className="tabular-nums font-semibold">{formatBRLFull(inv.total)}</span>
+                          </span>
+                        </summary>
+                        <ul className="space-y-1 px-3 pb-3">
+                          {items.length === 0 && (
+                            <li className="rounded-lg bg-card px-2 py-1.5 text-xs text-muted-foreground">
+                              Sem lançamentos.
                             </li>
-                          );
-                        })}
-                      </ul>
-                      {(inv.status === "aberta" || inv.status === "fechada") && inv.total > 0 && (
-                        <div className="border-t border-border/60 px-3 py-2">
-                          <button
-                            type="button"
-                            onClick={() => setConfirmPay(inv.id)}
-                            className="w-full rounded-lg bg-gradient-primary py-2 text-xs font-bold text-primary-foreground"
-                          >
-                            Pagar fatura ({formatBRLFull(inv.total)})
-                          </button>
-                        </div>
-                      )}
-                      {inv.status === "paga" && (
-                        <div className="border-t border-border/60 px-3 py-2">
-                          <button
-                            type="button"
-                            onClick={() => estornarFatura(inv.id)}
-                            className="w-full rounded-lg bg-secondary py-2 text-xs font-semibold text-foreground"
-                          >
-                            Estornar fatura
-                          </button>
-                        </div>
-                      )}
-                    </details>
-                  );
-                })}
-              </div>
-            </section>
-          );
-        })}
-      </div>
+                          )}
+                          {items.map((t) => {
+                            const st = installmentStatus(t.paidAt, t.dueDate);
+                            const nomePessoa = t.personId ? pessoasById.get(t.personId) : null;
+                            const clickable = !!t.purchaseGroupId;
+                            return (
+                              <li
+                                key={t.id}
+                                className={`rounded-lg bg-card px-2 py-2 text-xs ${clickable ? "cursor-pointer hover:ring-1 hover:ring-primary/30" : ""}`}
+                                onClick={clickable ? () => setOpenGroup(t.purchaseGroupId!) : undefined}
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="min-w-0 flex-1">
+                                    <p className="truncate font-medium text-foreground">{t.descricao}</p>
+                                    <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                                      <span className={`rounded px-1.5 py-0.5 ${INSTALLMENT_STATUS_CLASS[st]}`}>
+                                        {INSTALLMENT_STATUS_LABEL[st]}
+                                      </span>
+                                      {nomePessoa && (
+                                        <span className="inline-flex items-center gap-1 rounded bg-primary/15 px-1.5 py-0.5 text-primary">
+                                          <User className="h-2.5 w-2.5" /> {nomePessoa}
+                                        </span>
+                                      )}
+                                      {t.installmentTotal && t.installmentNumber && (
+                                        <span>
+                                          {t.installmentNumber}/{t.installmentTotal}
+                                        </span>
+                                      )}
+                                      {clickable && <span className="text-primary">· ver parcelas</span>}
+                                    </div>
+                                  </div>
+                                  <span className="tabular-nums font-semibold">{formatBRLFull(t.valor)}</span>
+                                </div>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                        {(inv.status === "aberta" || inv.status === "fechada") && inv.total > 0 && (
+                          <div className="border-t border-border/60 px-3 py-2">
+                            <button
+                              type="button"
+                              onClick={() => setConfirmPay(inv.id)}
+                              className="w-full rounded-lg bg-gradient-primary py-2 text-xs font-bold text-primary-foreground"
+                            >
+                              Pagar fatura ({formatBRLFull(inv.total)})
+                            </button>
+                          </div>
+                        )}
+                        {inv.status === "paga" && (
+                          <div className="border-t border-border/60 px-3 py-2">
+                            <button
+                              type="button"
+                              onClick={() => estornarFatura(inv.id)}
+                              className="w-full rounded-lg bg-secondary py-2 text-xs font-semibold text-foreground"
+                            >
+                              Estornar fatura
+                            </button>
+                          </div>
+                        )}
+                      </details>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      )}
 
       {showNew && (
         <NewCardDialog
+          card={editingCard ? cartoes.find((c) => c.id === editingCard) ?? null : null}
           contas={contas.map((c) => ({ id: c.id, nome: c.nome }))}
-          onClose={() => setShowNew(false)}
-          onSave={async (v) => {
-            await addCreditCard(v);
+          onClose={() => {
             setShowNew(false);
+            setEditingCard(null);
+          }}
+          onSave={async (v) => {
+            if (editingCard) {
+              await updateCreditCard(editingCard, v);
+            } else {
+              await addCreditCard(v);
+            }
+            setShowNew(false);
+            setEditingCard(null);
           }}
         />
       )}
@@ -201,6 +249,18 @@ function CartoesPage() {
         onClose={() => setConfirmPay(null)}
         onConfirm={async () => {
           if (confirmPay) await pagarFatura(confirmPay);
+        }}
+      />
+
+      <ConfirmDialog
+        open={!!confirmDelCard}
+        title="Excluir cartão?"
+        description="Faturas e transações associadas permanecerão, mas sem cartão vinculado."
+        destructive
+        confirmLabel="Excluir"
+        onClose={() => setConfirmDelCard(null)}
+        onConfirm={async () => {
+          if (confirmDelCard) await deleteCreditCard(confirmDelCard);
         }}
       />
 
@@ -219,10 +279,12 @@ function statusFaturaClass(s: string) {
 }
 
 function NewCardDialog({
+  card,
   contas,
   onClose,
   onSave,
 }: {
+  card: { name: string; closingDay: number; dueDay: number; paymentAccountId: string | null; creditLimit: number | null } | null;
   contas: { id: string; nome: string }[];
   onClose: () => void;
   onSave: (v: {
@@ -233,11 +295,11 @@ function NewCardDialog({
     creditLimit?: number | null;
   }) => Promise<void>;
 }) {
-  const [name, setName] = useState("");
-  const [closingDay, setClosingDay] = useState("1");
-  const [dueDay, setDueDay] = useState("10");
-  const [paymentAccountId, setPaymentAccountId] = useState<string>("");
-  const [creditLimit, setCreditLimit] = useState("");
+  const [name, setName] = useState(card?.name ?? "");
+  const [closingDay, setClosingDay] = useState(String(card?.closingDay ?? "1"));
+  const [dueDay, setDueDay] = useState(String(card?.dueDay ?? "10"));
+  const [paymentAccountId, setPaymentAccountId] = useState<string>(card?.paymentAccountId ?? "");
+  const [creditLimit, setCreditLimit] = useState(card?.creditLimit != null ? String(card.creditLimit) : "");
   const [saving, setSaving] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
@@ -258,17 +320,18 @@ function NewCardDialog({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 sm:items-center">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-4">
+      <button aria-label="Fechar" className="absolute inset-0" onClick={onClose} />
       <form
         onSubmit={submit}
-        className="w-full max-w-md space-y-3 rounded-3xl bg-card p-5 shadow-card"
+        className="relative w-full max-w-md space-y-3 rounded-t-3xl bg-card p-5 pb-[max(env(safe-area-inset-bottom),1.25rem)] shadow-card sm:rounded-3xl"
       >
-        <h3 className="text-base font-semibold">Novo cartão</h3>
+        <h3 className="text-base font-semibold">{card ? "Editar cartão" : "Novo cartão"}</h3>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Nome (ex: Nubank)"
-          className="w-full rounded-xl bg-surface-elevated px-3 py-2.5 text-sm outline-none"
+          className="w-full rounded-xl bg-surface-elevated px-3 py-2.5 text-sm outline-none ring-1 ring-border focus:ring-2 focus:ring-primary"
         />
         <div className="grid grid-cols-2 gap-2">
           <input
@@ -276,20 +339,20 @@ function NewCardDialog({
             onChange={(e) => setClosingDay(e.target.value.replace(/\D/g, ""))}
             placeholder="Dia de fechamento"
             inputMode="numeric"
-            className="w-full rounded-xl bg-surface-elevated px-3 py-2.5 text-sm outline-none"
+            className="w-full rounded-xl bg-surface-elevated px-3 py-2.5 text-sm outline-none ring-1 ring-border focus:ring-2 focus:ring-primary"
           />
           <input
             value={dueDay}
             onChange={(e) => setDueDay(e.target.value.replace(/\D/g, ""))}
             placeholder="Dia de vencimento"
             inputMode="numeric"
-            className="w-full rounded-xl bg-surface-elevated px-3 py-2.5 text-sm outline-none"
+            className="w-full rounded-xl bg-surface-elevated px-3 py-2.5 text-sm outline-none ring-1 ring-border focus:ring-2 focus:ring-primary"
           />
         </div>
         <select
           value={paymentAccountId}
           onChange={(e) => setPaymentAccountId(e.target.value)}
-          className="w-full rounded-xl bg-surface-elevated px-3 py-2.5 text-sm outline-none"
+          className="w-full rounded-xl bg-surface-elevated px-3 py-2.5 text-sm outline-none ring-1 ring-border focus:ring-2 focus:ring-primary"
         >
           <option value="">Conta de pagamento (opcional)</option>
           {contas.map((c) => (
@@ -303,7 +366,7 @@ function NewCardDialog({
           onChange={(e) => setCreditLimit(e.target.value)}
           placeholder="Limite (opcional)"
           inputMode="decimal"
-          className="w-full rounded-xl bg-surface-elevated px-3 py-2.5 text-sm outline-none"
+          className="w-full rounded-xl bg-surface-elevated px-3 py-2.5 text-sm outline-none ring-1 ring-border focus:ring-2 focus:ring-primary"
         />
         <div className="flex gap-2">
           <button
@@ -318,7 +381,7 @@ function NewCardDialog({
             disabled={saving}
             className="flex-1 rounded-xl bg-gradient-primary py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50"
           >
-            Salvar
+            {saving ? "Salvando..." : "Salvar"}
           </button>
         </div>
       </form>
